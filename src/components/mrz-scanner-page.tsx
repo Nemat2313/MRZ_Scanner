@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { Language, MrzData, ScanResult } from '@/types';
-import { enhanceImageAction } from '@/app/actions';
-import { generateMockMrzData } from '@/lib/mrz';
+import { enhanceImageAction, extractMrzAction } from '@/app/actions';
 import { exportToCsv } from '@/lib/export';
 import { LanguageProvider, useLanguage } from '@/contexts/language-context';
 import { FileUploader } from './file-uploader';
@@ -38,7 +37,6 @@ const MrzScannerCore = () => {
 
   const handleFiles = async (files: File[]) => {
     setIsProcessing(true);
-    const newResults: ScanResult[] = [];
 
     for (const file of files) {
       const id = `${file.name}-${Date.now()}`;
@@ -48,33 +46,65 @@ const MrzScannerCore = () => {
       await new Promise<void>((resolve) => {
         reader.onload = async () => {
           const originalImage = reader.result as string;
-          const initialResult: ScanResult = {
-            id,
-            fileName: file.name,
-            originalImage,
-            status: 'processing',
-          };
-          newResults.push(initialResult);
-          setResults((prev) => [...prev, initialResult]);
+          
+          setResults((prev) => [
+            ...prev,
+            {
+              id,
+              fileName: file.name,
+              originalImage,
+              status: 'processing',
+            },
+          ]);
 
-          const result = await enhanceImageAction({ photoDataUri: originalImage });
+          const enhanceResult = await enhanceImageAction({ photoDataUri: originalImage });
 
-          if (result.success && result.data) {
+          if (!enhanceResult.success || !enhanceResult.data) {
+            const errorMsg = enhanceResult.error || t('errorEnhancing');
             setResults((prev) =>
+              prev.map((r) =>
+                r.id === id ? { ...r, status: 'error', error: errorMsg } : r
+              )
+            );
+            toast({
+              variant: 'destructive',
+              title: t('scanFailed'),
+              description: `${file.name}: ${errorMsg}`,
+            });
+            resolve();
+            return;
+          }
+          
+          const enhancedImage = enhanceResult.data.enhancedPhotoDataUri;
+
+          setResults((prev) =>
+            prev.map((r) =>
+              r.id === id
+                ? {
+                    ...r,
+                    enhancedImage,
+                  }
+                : r
+            )
+          );
+
+          const mrzResult = await extractMrzAction({ photoDataUri: enhancedImage });
+
+          if (mrzResult.success && mrzResult.data) {
+             setResults((prev) =>
               prev.map((r) =>
                 r.id === id
                   ? {
                       ...r,
                       status: 'success',
-                      enhancedImage: result.data.enhancedPhotoDataUri,
-                      mrzData: generateMockMrzData(),
+                      mrzData: mrzResult.data,
                     }
                   : r
               )
             );
           } else {
-            const errorMsg = result.error || t('errorEnhancing');
-            setResults((prev) =>
+            const errorMsg = mrzResult.error || 'Failed to extract MRZ data.';
+             setResults((prev) =>
               prev.map((r) =>
                 r.id === id ? { ...r, status: 'error', error: errorMsg } : r
               )
@@ -89,15 +119,13 @@ const MrzScannerCore = () => {
         };
         reader.onerror = () => {
           const errorMsg = 'Failed to read file.';
-          const errorResult = {
+          setResults(prev => [...prev, {
             id,
             fileName: file.name,
             originalImage: '',
             status: 'error' as const,
             error: errorMsg,
-          };
-          newResults.push(errorResult);
-          setResults(prev => [...prev, errorResult]);
+          }]);
           toast({ variant: 'destructive', title: 'Error', description: errorMsg });
           resolve();
         }

@@ -1,5 +1,8 @@
 import type { MrzData } from '@/types';
 
+// This file is no longer used for generating mock data in the main application flow,
+// but it can be kept for testing purposes or future use.
+
 const sampleSurnames = ['DOE', 'SMITH', 'YILMAZ', 'IVANOV', 'CHEN', 'GARCIA'];
 const sampleGivenNames = ['JOHN', 'JANE', 'AHMET', 'OLGA', 'WEI', 'MARIA'];
 const countries = ['USA', 'GBR', 'TUR', 'RUS', 'CHN', 'ESP'];
