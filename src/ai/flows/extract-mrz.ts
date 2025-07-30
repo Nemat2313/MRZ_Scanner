@@ -63,16 +63,27 @@ CRITICAL ACCURACY INSTRUCTIONS:
     *   '<' is a filler character, do not mistake it for a letter.
     Double and triple-check your interpretation of every single character.
 
-2.  **Field Parsing:**
-    *   **Names:** The surname and given name fields are separated by '<<'. All names are terminated by a filler character '<'. Any filler characters within a name should be replaced with a space. For example, 'DOE<JOHN' should be parsed as surname 'DOE' and given name 'JOHN'. 'SMITH<<JOHN<PAUL' should be parsed as surname 'SMITH' and given name 'JOHN PAUL'.
-    *   **Sex:** The Sex field must be exactly 'M', 'F', or '<'. No other values are permitted.
-    *   **Dates:** Date of Birth and Expiry Date must be in YYMMDD format.
-    *   **Country Codes:** Issuing Country and Nationality must be 3-letter ISO 3166-1 alpha-3 codes.
-    *   **Personal Number:** This field (also called "Optional Data") is typically on the second line of the MRZ, after the document expiry date and its checksum. It can be of variable length and is often padded with filler characters ('<'). Extract ONLY the alphanumeric characters that constitute the personal number itself, excluding any leading or trailing filler characters or characters that are clearly part of the expiry date's checksum. If the field is entirely composed of filler characters, return an empty string.
+2.  **Field Parsing (TD3 Format - 2 lines, 44 chars each):**
+    *   **Line 1:**
+        *   \`documentType\`: Chars 1-2.
+        *   \`issuingCountry\`: Chars 3-5.
+        *   \`surname\` & \`givenName\`: Chars 6-44. Surname and given names are separated by '<<'. All names are terminated by a filler character '<'. Replace internal '<' with a space. E.g., 'DOE<JOHN' -> surname 'DOE', givenName 'JOHN'. 'SMITH<<JOHN<PAUL' -> surname 'SMITH', givenName 'JOHN PAUL'.
+    *   **Line 2:**
+        *   \`documentNumber\`: Chars 1-9. This field is **exactly 9 characters**.
+        *   **Checksum 1:** Char 10. A checksum digit for the document number. **Do not include this in any field.**
+        *   \`nationality\`: Chars 11-13.
+        *   \`dateOfBirth\`: Chars 14-19 (YYMMDD format).
+        *   **Checksum 2:** Char 20. A checksum digit for the date of birth. **Do not include this in any field.**
+        *   \`sex\`: Char 21. Must be 'M', 'F', or '<'.
+        *   \`expiryDate\`: Chars 22-27 (YYMMDD format).
+        *   **Checksum 3:** Char 28. A checksum digit for the expiry date. **Do not include this in any field.**
+        *   \`personalNumber\`: Chars 29-42. This field contains the personal number. It can be of variable length and is padded with filler characters ('<'). Extract **only** the alphanumeric characters that constitute the personal number itself, excluding any trailing filler characters. If the field is entirely composed of filler characters ('<<<<...'), return an empty string.
+        *   **Checksum 4:** Char 43. A checksum for the personal number. **Do not include this in any field.**
+        *   **Final Checksum:** Char 44. An overall checksum for Line 2. **Do not include this in any field.**
 
-3.  **Checksums (Do Not Validate):** The MRZ contains checksum digits. Do not attempt to validate them. Your task is to read the characters as they appear, including the checksum digits themselves, but ensure they are not incorrectly included in adjacent fields (like the Personal Number).
+3.  **Checksums (Do Not Validate or Include):** The MRZ contains checksum digits. Your task is to read the primary data characters as they appear, but **you must not include the checksum digits themselves in the extracted data fields** (\`documentNumber\`, \`dateOfBirth\`, \`expiryDate\`, \`personalNumber\`).
 
-4.  **Final Review:** Before finalizing the output, review all extracted fields against the MRZ lines in the image one last time to ensure complete accuracy.
+4.  **Final Review:** Before finalizing the output, review all extracted fields against the MRZ lines in the image one last time to ensure complete accuracy based on the precise field positions defined above.
 
 Image with MRZ to be processed:
 {{media url=photoDataUri}}
