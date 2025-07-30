@@ -48,16 +48,32 @@ const extractMrzFlow = ai.defineFlow(
       name: 'extractMrzPrompt',
       input: { schema: ExtractMrzInputSchema },
       output: { schema: MrzDataSchema },
-      prompt: `You are an expert OCR system specialized in reading Machine-Readable Zones (MRZ) from official travel documents like passports and ID cards.
+      prompt: `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) from official government-issued identity documents. Your accuracy is paramount.
 
-Analyze the provided image with extreme care and accuracy. The MRZ is the block of text at the bottom of the identity page. Parse the information and return it in a structured JSON format.
+Analyze the provided image. The MRZ is the two or three lines of text at the bottom of the identity page. Extract the information with extreme precision and return it as a structured JSON object.
 
-CRITICAL INSTRUCTIONS:
-1.  Double-check every single character. For example, 'O' can be mistaken for '0', 'I' for '1', 'S' for '5', 'B' for '8'. Be extremely precise.
-2.  The 'sex' field must be 'M', 'F', or '<'. No other values are permitted.
-3.  Pay close attention to the format of dates (YYMMDD) and country codes (3-letter ISO).
+CRITICAL ACCURACY INSTRUCTIONS:
+1.  **Character Precision:** Be extremely vigilant about common OCR errors.
+    *   'O' (letter) vs. '0' (digit)
+    *   'I' (letter) vs. '1' (digit)
+    *   'S' (letter) vs. '5' (digit)
+    *   'B' (letter) vs. '8' (digit)
+    *   'G' (letter) vs. '6' (digit)
+    *   'Z' (letter) vs. '2' (digit)
+    *   '<' is a filler character, do not mistake it for a letter.
+    Double and triple-check your interpretation of every single character.
 
-Image with MRZ:
+2.  **Field Parsing:**
+    *   The surname and given name fields are separated by '<<'. All names are terminated by a filler character '<'. Any filler characters within a name should be replaced with a space. For example, 'DOE<JOHN' should be parsed as surname 'DOE' and given name 'JOHN'. 'SMITH<<JOHN<PAUL' should be parsed as surname 'SMITH' and given name 'JOHN PAUL'.
+    *   The **Sex** field must be exactly 'M', 'F', or '<'. No other values are permitted.
+    *   **Dates** (Date of Birth, Expiry Date) must be in YYMMDD format.
+    *   **Country Codes** (Issuing Country, Nationality) must be 3-letter ISO 3166-1 alpha-3 codes.
+
+3.  **Checksums (Do Not Validate):** The MRZ contains checksum digits. Do not attempt to validate them. Your task is to read the characters as they appear, including the checksum digits themselves.
+
+4.  **Final Review:** Before finalizing the output, review all extracted fields against the MRZ lines in the image one last time to ensure complete accuracy.
+
+Image with MRZ to be processed:
 {{media url=photoDataUri}}
 `,
     });
