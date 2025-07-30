@@ -50,9 +50,12 @@ const extractMrzFlow = ai.defineFlow(
       output: { schema: MrzDataSchema },
       prompt: `You are an expert OCR system specialized in reading Machine-Readable Zones (MRZ) from official travel documents like passports and ID cards.
 
-Analyze the provided image and extract the MRZ data. The MRZ is the block of text at the bottom of the identity page. Parse the information and return it in a structured JSON format.
+Analyze the provided image with extreme care and accuracy. The MRZ is the block of text at the bottom of the identity page. Parse the information and return it in a structured JSON format.
 
-Make sure to correctly identify each field based on the MRZ standard. Pay close attention to the format of dates (YYMMDD) and country codes (3-letter ISO).
+CRITICAL INSTRUCTIONS:
+1.  Double-check every single character. For example, 'O' can be mistaken for '0', 'I' for '1', 'S' for '5', 'B' for '8'. Be extremely precise.
+2.  The 'sex' field must be 'M', 'F', or '<'. No other values are permitted.
+3.  Pay close attention to the format of dates (YYMMDD) and country codes (3-letter ISO).
 
 Image with MRZ:
 {{media url=photoDataUri}}

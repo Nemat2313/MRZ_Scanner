@@ -65,7 +65,7 @@ const enhanceScanFlow = ai.defineFlow(
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: [
         {media: {url: input.photoDataUri}},
-        {text: 'Enhance this document scan for OCR.'},
+        {text: 'Enhance this document scan for OCR. Increase contrast, sharpen the image, and correct any rotation or perspective issues to make the text as clear and machine-readable as possible.'},
       ],
       config: {
         responseModalities: ['TEXT', 'IMAGE'],

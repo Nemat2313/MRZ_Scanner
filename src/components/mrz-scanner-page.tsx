@@ -29,6 +29,21 @@ const Header = () => {
   );
 };
 
+function formatMrzDate(dateStr: string): string {
+  if (!/^\d{6}$/.test(dateStr)) {
+    return dateStr; 
+  }
+  const year = parseInt(dateStr.substring(0, 2), 10);
+  const month = dateStr.substring(2, 4);
+  const day = dateStr.substring(4, 6);
+
+  const currentYear = new Date().getFullYear() % 100;
+  const fullYear = year > currentYear ? 1900 + year : 2000 + year;
+
+  return `${day}.${month}.${fullYear}`;
+}
+
+
 const MrzScannerCore = () => {
   const [results, setResults] = useState<ScanResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -91,13 +106,19 @@ const MrzScannerCore = () => {
           const mrzResult = await extractMrzAction({ photoDataUri: enhancedImage });
 
           if (mrzResult.success && mrzResult.data) {
+            const formattedData = {
+              ...mrzResult.data,
+              dateOfBirth: formatMrzDate(mrzResult.data.dateOfBirth),
+              expiryDate: formatMrzDate(mrzResult.data.expiryDate),
+            };
+
              setResults((prev) =>
               prev.map((r) =>
                 r.id === id
                   ? {
                       ...r,
                       status: 'success',
-                      mrzData: mrzResult.data,
+                      mrzData: formattedData,
                     }
                   : r
               )
