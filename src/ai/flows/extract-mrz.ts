@@ -16,7 +16,7 @@ const ExtractMrzInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
-      "A photo of a document containing an MRZ, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A photo of a document containing an MRZ, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
 });
 export type ExtractMrzInput = z.infer<typeof ExtractMrzInputSchema>;
@@ -64,12 +64,13 @@ CRITICAL ACCURACY INSTRUCTIONS:
     Double and triple-check your interpretation of every single character.
 
 2.  **Field Parsing:**
-    *   The surname and given name fields are separated by '<<'. All names are terminated by a filler character '<'. Any filler characters within a name should be replaced with a space. For example, 'DOE<JOHN' should be parsed as surname 'DOE' and given name 'JOHN'. 'SMITH<<JOHN<PAUL' should be parsed as surname 'SMITH' and given name 'JOHN PAUL'.
-    *   The **Sex** field must be exactly 'M', 'F', or '<'. No other values are permitted.
-    *   **Dates** (Date of Birth, Expiry Date) must be in YYMMDD format.
-    *   **Country Codes** (Issuing Country, Nationality) must be 3-letter ISO 3166-1 alpha-3 codes.
+    *   **Names:** The surname and given name fields are separated by '<<'. All names are terminated by a filler character '<'. Any filler characters within a name should be replaced with a space. For example, 'DOE<JOHN' should be parsed as surname 'DOE' and given name 'JOHN'. 'SMITH<<JOHN<PAUL' should be parsed as surname 'SMITH' and given name 'JOHN PAUL'.
+    *   **Sex:** The Sex field must be exactly 'M', 'F', or '<'. No other values are permitted.
+    *   **Dates:** Date of Birth and Expiry Date must be in YYMMDD format.
+    *   **Country Codes:** Issuing Country and Nationality must be 3-letter ISO 3166-1 alpha-3 codes.
+    *   **Personal Number:** This field (also called "Optional Data") is typically on the second line of the MRZ, after the document expiry date and its checksum. It can be of variable length and is often padded with filler characters ('<'). Extract ONLY the alphanumeric characters that constitute the personal number itself, excluding any leading or trailing filler characters or characters that are clearly part of the expiry date's checksum. If the field is entirely composed of filler characters, return an empty string.
 
-3.  **Checksums (Do Not Validate):** The MRZ contains checksum digits. Do not attempt to validate them. Your task is to read the characters as they appear, including the checksum digits themselves.
+3.  **Checksums (Do Not Validate):** The MRZ contains checksum digits. Do not attempt to validate them. Your task is to read the characters as they appear, including the checksum digits themselves, but ensure they are not incorrectly included in adjacent fields (like the Personal Number).
 
 4.  **Final Review:** Before finalizing the output, review all extracted fields against the MRZ lines in the image one last time to ensure complete accuracy.
 
