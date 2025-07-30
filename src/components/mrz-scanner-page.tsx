@@ -24,10 +24,10 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center">
         <div className="mr-4 flex items-center">
-        <svg
+          <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 256 256"
-            className="h-8 w-8 mr-2"
+            className="h-8 w-8 mr-2 rounded-none"
           >
             <path
               fill="#6A2C90"
@@ -39,6 +39,7 @@ const Header = () => {
             />
           </svg>
           <h1 className="text-xl font-bold tracking-tight">Plain2Do</h1>
+          <span className="text-xl text-muted-foreground ml-2 font-medium">| MRZ Scanner</span>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <LanguageSwitcher />
@@ -63,40 +64,22 @@ function formatMrzDate(dateStr: string, isExpiry: boolean): string {
 
   if (isExpiry) {
      // Expiry dates are always in the future or very recent past.
-     // If yy is less than current yy, it's next century, otherwise this century.
-     // This logic has issues around century changes, but is better than before.
      // A 50-year window is a common approach.
-     fullYear = (year < (current2DigitYear - 10)) ? currentCentury + 100 + year : currentCentury + year;
+     const threshold = (current2DigitYear + 50) % 100;
+     if (year < threshold) {
+        fullYear = currentCentury + year;
+     } else {
+        fullYear = currentCentury - 100 + year;
+     }
+     // If the calculated year is far in the past, assume next century
      if (fullYear < currentYear - 10) {
         fullYear += 100;
      }
+
   } else { // Date of Birth
     // DOB is always in the past.
     fullYear = (year > current2DigitYear) ? (currentCentury - 100) + year : currentCentury + year;
   }
-  
-  // A simpler heuristic for now
-  if (isExpiry) {
-    // Expiry years like 26 should be 2026 not 1926.
-    // Let's assume a 50 year window from current year for expiry
-    if (year < (current2DigitYear + 50) && year > (current2DigitYear -10) ) {
-        fullYear = currentCentury + year;
-    } else if (year < current2DigitYear) {
-        fullYear = currentCentury + year;
-    }
-    else {
-        fullYear = currentCentury - 100 + year;
-    }
-     const centuryGuess = year > (new Date().getFullYear() % 100) + 20 ? 1900 : 2000;
-     fullYear = centuryGuess + year;
-
-
-  } else {
-    const centuryGuess = year > (new Date().getFullYear() % 100) ? 1900 : 2000;
-    fullYear = centuryGuess + year;
-  }
-
-
   return `${day}.${month}.${fullYear}`;
 }
 
