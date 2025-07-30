@@ -4,13 +4,19 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { Language, MrzData, ScanResult } from '@/types';
 import { extractMrzAction } from '@/app/actions';
-import { exportToCsv } from '@/lib/export';
+import { exportToCsv, exportToXlsx } from '@/lib/export';
 import { LanguageProvider, useLanguage } from '@/contexts/language-context';
 import { FileUploader } from './file-uploader';
 import { ResultsDisplay } from './results-display';
 import { Button } from './ui/button';
-import { Download, ScanText } from 'lucide-react';
+import { Download, ScanText, Trash2, FileUp } from 'lucide-react';
 import { LanguageSwitcher } from './language-switcher';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Header = () => {
   const { t } = useLanguage();
@@ -29,7 +35,7 @@ const Header = () => {
   );
 };
 
-function formatMrzDate(dateStr: string): string {
+function formatMrzDate(dateStr: string, isExpiry: boolean): string {
   if (!/^\d{6}$/.test(dateStr)) {
     return dateStr;
   }
@@ -37,11 +43,50 @@ function formatMrzDate(dateStr: string): string {
   const month = dateStr.substring(2, 4);
   const day = dateStr.substring(4, 6);
 
-  const currentYear = new Date().getFullYear() % 100;
-  const fullYear = year > currentYear ? 1900 + year : 2000 + year;
+  let fullYear: number;
+  const currentYear = new Date().getFullYear();
+  const currentCentury = Math.floor(currentYear / 100) * 100;
+  const current2DigitYear = currentYear % 100;
+
+  if (isExpiry) {
+     // Expiry dates are always in the future or very recent past.
+     // If yy is less than current yy, it's next century, otherwise this century.
+     // This logic has issues around century changes, but is better than before.
+     // A 50-year window is a common approach.
+     fullYear = (year < (current2DigitYear - 10)) ? currentCentury + 100 + year : currentCentury + year;
+     if (fullYear < currentYear - 10) {
+        fullYear += 100;
+     }
+  } else { // Date of Birth
+    // DOB is always in the past.
+    fullYear = (year > current2DigitYear) ? (currentCentury - 100) + year : currentCentury + year;
+  }
+  
+  // A simpler heuristic for now
+  if (isExpiry) {
+    // Expiry years like 26 should be 2026 not 1926.
+    // Let's assume a 50 year window from current year for expiry
+    if (year < (current2DigitYear + 50) && year > (current2DigitYear -10) ) {
+        fullYear = currentCentury + year;
+    } else if (year < current2DigitYear) {
+        fullYear = currentCentury + year;
+    }
+    else {
+        fullYear = currentCentury - 100 + year;
+    }
+     const centuryGuess = year > (new Date().getFullYear() % 100) + 20 ? 1900 : 2000;
+     fullYear = centuryGuess + year;
+
+
+  } else {
+    const centuryGuess = year > (new Date().getFullYear() % 100) ? 1900 : 2000;
+    fullYear = centuryGuess + year;
+  }
+
 
   return `${day}.${month}.${fullYear}`;
 }
+
 
 const MrzScannerCore = () => {
   const [results, setResults] = useState<ScanResult[]>([]);
@@ -62,13 +107,13 @@ const MrzScannerCore = () => {
           const originalImage = reader.result as string;
 
           setResults((prev) => [
-            ...prev,
             {
               id,
               fileName: file.name,
               originalImage,
               status: 'processing',
             },
+            ...prev,
           ]);
           
           const mrzResult = await extractMrzAction({ photoDataUri: originalImage });
@@ -76,8 +121,8 @@ const MrzScannerCore = () => {
           if (mrzResult.success && mrzResult.data) {
             const formattedData = {
               ...mrzResult.data,
-              dateOfBirth: formatMrzDate(mrzResult.data.dateOfBirth),
-              expiryDate: formatMrzDate(mrzResult.data.expiryDate),
+              dateOfBirth: formatMrzDate(mrzResult.data.dateOfBirth, false),
+              expiryDate: formatMrzDate(mrzResult.data.expiryDate, true),
             };
 
             setResults((prev) =>
@@ -87,7 +132,6 @@ const MrzScannerCore = () => {
                       ...r,
                       status: 'success',
                       mrzData: formattedData,
-                      enhancedImage: originalImage, // Keep enhancedImage field for consistent data structure
                     }
                   : r
               )
@@ -110,7 +154,6 @@ const MrzScannerCore = () => {
         reader.onerror = () => {
           const errorMsg = 'Failed to read file.';
           setResults((prev) => [
-            ...prev,
             {
               id,
               fileName: file.name,
@@ -118,6 +161,7 @@ const MrzScannerCore = () => {
               status: 'error' as const,
               error: errorMsg,
             },
+            ...prev,
           ]);
           toast({ variant: 'destructive', title: 'Error', description: errorMsg });
           resolve();
@@ -127,20 +171,29 @@ const MrzScannerCore = () => {
     setIsProcessing(false);
   };
 
-  const handleExport = () => {
-    const headers: Record<keyof MrzData, string> = {
-      documentType: t('documentType'),
-      issuingCountry: t('issuingCountry'),
-      surname: t('surname'),
-      givenName: t('givenName'),
-      documentNumber: t('documentNumber'),
-      nationality: t('nationality'),
-      dateOfBirth: t('dateOfBirth'),
-      sex: t('sex'),
-      expiryDate: t('expiryDate'),
-      personalNumber: t('personalNumber'),
-    };
-    exportToCsv(results, headers);
+  const getHeaders = (): Record<keyof MrzData, string> => ({
+    documentType: t('documentType'),
+    issuingCountry: t('issuingCountry'),
+    surname: t('surname'),
+    givenName: t('givenName'),
+    documentNumber: t('documentNumber'),
+    nationality: t('nationality'),
+    dateOfBirth: t('dateOfBirth'),
+    sex: t('sex'),
+    expiryDate: t('expiryDate'),
+    personalNumber: t('personalNumber'),
+  });
+
+  const handleExportCsv = () => {
+    exportToCsv(results, getHeaders());
+  };
+
+  const handleExportXlsx = () => {
+    exportToXlsx(results, getHeaders());
+  };
+
+  const handleClearResults = () => {
+    setResults([]);
   };
 
   const successfulScans =
@@ -159,14 +212,33 @@ const MrzScannerCore = () => {
 
         <section className="flex flex-col items-center">
           <div className="w-full max-w-4xl">
-            <div className="flex justify-end mb-4">
-              <Button
-                onClick={handleExport}
-                disabled={!successfulScans || isProcessing}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {t('exportCsv')}
-              </Button>
+            <div className="flex justify-end gap-2 mb-4">
+               {results.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleClearResults}
+                  disabled={isProcessing}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('clearResults')}
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button disabled={!successfulScans || isProcessing}>
+                    <Download className="mr-2 h-4 w-4" />
+                    {t('export')}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportCsv}>
+                    {t('exportCsv')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportXlsx}>
+                     {t('exportXlsx')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <ResultsDisplay results={results} />
           </div>
