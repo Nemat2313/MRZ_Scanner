@@ -48,44 +48,35 @@ const extractMrzFlow = ai.defineFlow(
       name: 'extractMrzPrompt',
       input: { schema: ExtractMrzInputSchema },
       output: { schema: MrzDataSchema },
-      prompt: `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) from official government-issued identity documents. Your accuracy is paramount.
+      prompt: `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) from official government-issued identity documents. Your task is to extract information with maximum accuracy.
 
-Analyze the provided image. The MRZ is the two or three lines of text at the bottom of the identity page. Extract the information with extreme precision and return it as a structured JSON object.
+Analyze the provided image containing an MRZ. The MRZ is typically two or three lines of text at the bottom of the identity page.
 
-CRITICAL ACCURACY INSTRUCTIONS:
-1.  **Character Precision:** Be extremely vigilant about common OCR errors.
-    *   'O' (letter) vs. '0' (digit)
-    *   'I' (letter) vs. '1' (digit)
-    *   'S' (letter) vs. '5' (digit)
-    *   'B' (letter) vs. '8' (digit)
-    *   'G' (letter) vs. '6' (digit)
-    *   'Z' (letter) vs. '2' (digit)
-    *   '<' is a filler character, do not mistake it for a letter.
-    Double and triple-check your interpretation of every single character.
-
+CRITICAL INSTRUCTIONS:
+1.  **Character Accuracy:** Be extremely careful about common OCR errors. 'O' is a letter, '0' is a digit. 'I' is a letter, '1' is a digit. '<' is a filler character. Double-check every character.
 2.  **Field Parsing (TD3 Format - 2 lines, 44 chars each):**
     *   **Line 1:**
-        *   \`documentType\`: Chars 1-2.
-        *   \`issuingCountry\`: Chars 3-5.
-        *   \`surname\` & \`givenName\`: Chars 6-44. Surname and given names are separated by '<<'. All names are terminated by a filler character '<'. Replace internal '<' with a space. E.g., 'DOE<JOHN' -> surname 'DOE', givenName 'JOHN'. 'SMITH<<JOHN<PAUL' -> surname 'SMITH', givenName 'JOHN PAUL'.
+        *   Chars 1-2: Document Type (e.g., 'P<').
+        *   Chars 3-5: Issuing Country (e.g., 'UTO').
+        *   Chars 6-44: Surname and Given Names, separated by '<<'. Example: 'SURNAME<<GIVEN<NAMES<<<<'.
     *   **Line 2:**
-        *   \`documentNumber\`: Chars 1-9. This field is **exactly 9 characters**.
-        *   **Checksum 1:** Char 10. A checksum digit for the document number. **Do not include this in any field.**
-        *   \`nationality\`: Chars 11-13.
-        *   \`dateOfBirth\`: Chars 14-19 (YYMMDD format).
-        *   **Checksum 2:** Char 20. A checksum digit for the date of birth. **Do not include this in any field.**
-        *   \`sex\`: Char 21. Must be 'M', 'F', or '<'.
-        *   \`expiryDate\`: Chars 22-27 (YYMMDD format).
-        *   **Checksum 3:** Char 28. A checksum digit for the expiry date. **Do not include this in any field.**
-        *   \`personalNumber\`: Chars 29-42. This field contains the personal number. It can be of variable length and is padded with filler characters ('<'). Extract **only** the alphanumeric characters that constitute the personal number itself, excluding any trailing filler characters. If the field is entirely composed of filler characters ('<<<<...'), return an empty string.
-        *   **Checksum 4:** Char 43. A checksum for the personal number. **Do not include this in any field.**
-        *   **Final Checksum:** Char 44. An overall checksum for Line 2. **Do not include this in any field.**
+        *   Chars 1-9: Document Number.
+        *   Char 10: Checksum digit (ignore).
+        *   Chars 11-13: Nationality.
+        *   Chars 14-19: Date of Birth (YYMMDD).
+        *   Char 20: Checksum digit (ignore).
+        *   Char 21: Sex (M/F/<).
+        *   Chars 22-27: Expiry Date (YYMMDD).
+        *   Char 28: Checksum digit (ignore).
+        *   Chars 29-42: Personal Number or optional data. Can be empty.
+        *   Char 43: Checksum digit (ignore).
+        *   Char 44: Final checksum (ignore).
+3.  **Output Formatting:**
+    *   For names, replace filler '<' characters with a single space. 'DOE<JOHN' becomes surname: 'DOE', givenName: 'JOHN'. 'SMITH<<JOHN<PAUL' becomes surname: 'SMITH', givenName: 'JOHN PAUL'.
+    *   Return all other fields exactly as they are read, excluding checksum digits.
+    *   If a field is entirely composed of filler characters (e.g., '<<<<<<<<<<'), return an empty string for it.
 
-3.  **Checksums (Do Not Validate or Include):** The MRZ contains checksum digits. Your task is to read the primary data characters as they appear, but **you must not include the checksum digits themselves in the extracted data fields** (\`documentNumber\`, \`dateOfBirth\`, \`expiryDate\`, \`personalNumber\`).
-
-4.  **Final Review:** Before finalizing the output, review all extracted fields against the MRZ lines in the image one last time to ensure complete accuracy based on the precise field positions defined above.
-
-Image with MRZ to be processed:
+Process the MRZ from the following image:
 {{media url=photoDataUri}}
 `,
     });
