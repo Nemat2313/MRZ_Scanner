@@ -104,29 +104,17 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                 {result.status === 'error' && (
                   <p className="text-destructive">{result.error}</p>
                 )}
-                {result.status === 'success' && result.enhancedImage && result.mrzData && (
+                {result.status === 'success' && result.mrzData && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <h4 className="mb-2 font-semibold">{t('originalImage')}</h4>
-                        <Image
-                          src={result.originalImage}
-                          alt="Original Scan"
-                          width={400}
-                          height={250}
-                          className="rounded-lg border object-contain"
-                        />
-                      </div>
-                      <div>
-                        <h4 className="mb-2 font-semibold">{t('enhancedImage')}</h4>
-                        <Image
-                          src={result.enhancedImage}
-                          alt="Enhanced Scan"
-                          width={400}
-                          height={250}
-                          className="rounded-lg border object-contain"
-                        />
-                      </div>
+                    <div>
+                      <h4 className="mb-2 font-semibold">{t('originalImage')}</h4>
+                      <Image
+                        src={result.originalImage}
+                        alt="Original Scan"
+                        width={400}
+                        height={250}
+                        className="rounded-lg border object-contain"
+                      />
                     </div>
                     <div>
                       <h4 className="mb-2 font-semibold">{t('mrzInformation')}</h4>

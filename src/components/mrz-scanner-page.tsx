@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { Language, MrzData, ScanResult } from '@/types';
-import { enhanceImageAction, extractMrzAction } from '@/app/actions';
+import { extractMrzAction } from '@/app/actions';
 import { exportToCsv } from '@/lib/export';
 import { LanguageProvider, useLanguage } from '@/contexts/language-context';
 import { FileUploader } from './file-uploader';
@@ -31,7 +31,7 @@ const Header = () => {
 
 function formatMrzDate(dateStr: string): string {
   if (!/^\d{6}$/.test(dateStr)) {
-    return dateStr; 
+    return dateStr;
   }
   const year = parseInt(dateStr.substring(0, 2), 10);
   const month = dateStr.substring(2, 4);
@@ -42,7 +42,6 @@ function formatMrzDate(dateStr: string): string {
 
   return `${day}.${month}.${fullYear}`;
 }
-
 
 const MrzScannerCore = () => {
   const [results, setResults] = useState<ScanResult[]>([]);
@@ -61,7 +60,7 @@ const MrzScannerCore = () => {
       await new Promise<void>((resolve) => {
         reader.onload = async () => {
           const originalImage = reader.result as string;
-          
+
           setResults((prev) => [
             ...prev,
             {
@@ -71,39 +70,8 @@ const MrzScannerCore = () => {
               status: 'processing',
             },
           ]);
-
-          const enhanceResult = await enhanceImageAction({ photoDataUri: originalImage });
-
-          if (!enhanceResult.success || !enhanceResult.data) {
-            const errorMsg = enhanceResult.error || t('errorEnhancing');
-            setResults((prev) =>
-              prev.map((r) =>
-                r.id === id ? { ...r, status: 'error', error: errorMsg } : r
-              )
-            );
-            toast({
-              variant: 'destructive',
-              title: t('scanFailed'),
-              description: `${file.name}: ${errorMsg}`,
-            });
-            resolve();
-            return;
-          }
           
-          const enhancedImage = enhanceResult.data.enhancedPhotoDataUri;
-
-          setResults((prev) =>
-            prev.map((r) =>
-              r.id === id
-                ? {
-                    ...r,
-                    enhancedImage,
-                  }
-                : r
-            )
-          );
-
-          const mrzResult = await extractMrzAction({ photoDataUri: enhancedImage });
+          const mrzResult = await extractMrzAction({ photoDataUri: originalImage });
 
           if (mrzResult.success && mrzResult.data) {
             const formattedData = {
@@ -112,20 +80,21 @@ const MrzScannerCore = () => {
               expiryDate: formatMrzDate(mrzResult.data.expiryDate),
             };
 
-             setResults((prev) =>
+            setResults((prev) =>
               prev.map((r) =>
                 r.id === id
                   ? {
                       ...r,
                       status: 'success',
                       mrzData: formattedData,
+                      enhancedImage: originalImage, // Keep enhancedImage field for consistent data structure
                     }
                   : r
               )
             );
           } else {
             const errorMsg = mrzResult.error || 'Failed to extract MRZ data.';
-             setResults((prev) =>
+            setResults((prev) =>
               prev.map((r) =>
                 r.id === id ? { ...r, status: 'error', error: errorMsg } : r
               )
@@ -140,21 +109,24 @@ const MrzScannerCore = () => {
         };
         reader.onerror = () => {
           const errorMsg = 'Failed to read file.';
-          setResults(prev => [...prev, {
-            id,
-            fileName: file.name,
-            originalImage: '',
-            status: 'error' as const,
-            error: errorMsg,
-          }]);
+          setResults((prev) => [
+            ...prev,
+            {
+              id,
+              fileName: file.name,
+              originalImage: '',
+              status: 'error' as const,
+              error: errorMsg,
+            },
+          ]);
           toast({ variant: 'destructive', title: 'Error', description: errorMsg });
           resolve();
-        }
+        };
       });
     }
     setIsProcessing(false);
   };
-  
+
   const handleExport = () => {
     const headers: Record<keyof MrzData, string> = {
       documentType: t('documentType'),
@@ -171,20 +143,27 @@ const MrzScannerCore = () => {
     exportToCsv(results, headers);
   };
 
-  const successfulScans = results.filter(r => r.status === 'success').length > 0;
+  const successfulScans =
+    results.filter((r) => r.status === 'success').length > 0;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header />
       <main className="flex-1 space-y-8 p-4 sm:p-8 md:p-12">
         <section className="flex flex-col items-center">
-          <FileUploader onFilesAccepted={handleFiles} isProcessing={isProcessing} />
+          <FileUploader
+            onFilesAccepted={handleFiles}
+            isProcessing={isProcessing}
+          />
         </section>
 
         <section className="flex flex-col items-center">
           <div className="w-full max-w-4xl">
             <div className="flex justify-end mb-4">
-              <Button onClick={handleExport} disabled={!successfulScans || isProcessing}>
+              <Button
+                onClick={handleExport}
+                disabled={!successfulScans || isProcessing}
+              >
                 <Download className="mr-2 h-4 w-4" />
                 {t('exportCsv')}
               </Button>
