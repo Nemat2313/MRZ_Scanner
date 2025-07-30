@@ -24,8 +24,21 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center">
         <div className="mr-4 flex items-center">
-          <ScanText className="h-7 w-7 mr-3 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight">{t('appName')}</h1>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 256 256"
+            className="h-8 w-8 mr-2"
+          >
+            <path
+              fill="#6A2C90"
+              d="M128 0C93.8 0 63.2 11.2 39.1 31.9V256h111.8c54.7 0 99.1-44.4 99.1-99.1V31.9C227.4 11.2 196.8 0 162.6 0H128zm0 29.1h34.6c36.4 0 66.1 29.6 66.1 66.1s-29.6 66.1-66.1 66.1H128V29.1z"
+            />
+            <path
+              fill="#6EBE44"
+              d="M109.4 162.6L43.3 96.5l20.6-20.6 45.5 45.5 91-91 20.6 20.6-111.6 111.6z"
+            />
+          </svg>
+          <h1 className="text-xl font-bold tracking-tight">Plain2Do</h1>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <LanguageSwitcher />
