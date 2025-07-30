@@ -22,7 +22,7 @@ const ExtractMrzInputSchema = z.object({
 export type ExtractMrzInput = z.infer<typeof ExtractMrzInputSchema>;
 
 const MrzDataSchema = z.object({
-  documentType: z.string().describe('The type of the document (e.g., P for Passport).'),
+  documentType: z.string().describe('The type of the document (e.g., P for Passport, I for ID Card).'),
   issuingCountry: z.string().describe('The three-letter code of the issuing country.'),
   surname: z.string().describe("The surname of the holder."),
   givenName: z.string().describe("The given name(s) of the holder."),
@@ -50,33 +50,47 @@ const extractMrzFlow = ai.defineFlow(
       output: { schema: MrzDataSchema },
       prompt: `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) from official government-issued identity documents. Your task is to extract information with maximum accuracy.
 
-Analyze the provided image containing an MRZ. The MRZ is typically two or three lines of text at the bottom of the identity page.
+If the provided document has multiple pages (e.g., a PDF), first locate the single page that contains the Machine-Readable Zone (MRZ) at the bottom. All subsequent parsing must be performed ONLY on that specific page.
 
 CRITICAL INSTRUCTIONS:
 1.  **Character Accuracy:** Be extremely careful about common OCR errors. 'O' is a letter, '0' is a digit. 'I' is a letter, '1' is a digit. '<' is a filler character. Double-check every character.
-2.  **Field Parsing (TD3 Format - 2 lines, 44 chars each):**
-    *   **Line 1:**
-        *   Chars 1-2: Document Type (e.g., 'P<').
-        *   Chars 3-5: Issuing Country (e.g., 'UTO').
-        *   Chars 6-44: Surname and Given Names, separated by '<<'. Example: 'SURNAME<<GIVEN<NAMES<<<<'.
-    *   **Line 2:**
-        *   Chars 1-9: Document Number.
-        *   Char 10: Checksum digit (ignore).
-        *   Chars 11-13: Nationality.
-        *   Chars 14-19: Date of Birth (YYMMDD).
-        *   Char 20: Checksum digit (ignore).
-        *   Char 21: Sex (M/F/<).
-        *   Chars 22-27: Expiry Date (YYMMDD).
-        *   Char 28: Checksum digit (ignore).
-        *   Chars 29-42: Personal Number or optional data. Can be empty.
-        *   Char 43: Checksum digit (ignore).
-        *   Char 44: Final checksum (ignore).
-3.  **Output Formatting:**
-    *   For names, replace filler '<' characters with a single space. 'DOE<JOHN' becomes surname: 'DOE', givenName: 'JOHN'. 'SMITH<<JOHN<PAUL' becomes surname: 'SMITH', givenName: 'JOHN PAUL'.
-    *   Return all other fields exactly as they are read, excluding checksum digits.
-    *   If a field is entirely composed of filler characters (e.g., '<<<<<<<<<<'), return an empty string for it.
 
-Process the MRZ from the following image:
+2.  **Field Parsing by Format:**
+
+    *   **TD3 Format (Passports - 2 lines, 44 chars each):**
+        *   **Line 1:**
+            *   Chars 1-2: Document Type. The first character is 'P' (for Passport). The second character is often '<'.
+            *   Chars 3-5: Issuing Country (e.g., 'UTO').
+            *   Chars 6-44: Surname and Given Names, separated by '<<'. Example: 'SURNAME<<GIVEN<NAMES<<<<'.
+        *   **Line 2:**
+            *   Chars 1-9: Document Number.
+            *   Char 10: Checksum digit (ignore).
+            *   Chars 11-13: Nationality.
+            *   Chars 14-19: Date of Birth (YYMMDD).
+            *   Char 20: Checksum digit (ignore).
+            *   Char 21: Sex (M/F/<).
+            *   Chars 22-27: Expiry Date (YYMMDD).
+            *   Char 28: Checksum digit (ignore).
+            *   Chars 29-42: Personal Number or optional data.
+            *   Char 43: Checksum digit (ignore).
+            *   Char 44: Final checksum (ignore).
+
+    *   **TD1/TD2 Format (ID Cards - often 3 lines):**
+        *   **Line 1 (TD1 example):**
+            *   Chars 1-2: Document Type. The first character is 'I'. The second character can vary (e.g., 'D', 'V', '<'). For the 'documentType' field, return ONLY the first character 'I'.
+            *   Chars 3-5: Issuing Country.
+            *   Chars 6-14: Document Number.
+            *   ... other fields
+        *   **Examine all lines to correctly identify all fields based on standard MRZ formats.**
+
+3.  **Output Formatting Rules:**
+    *   **Document Type:** For Passports (TD3), return the first character (usually 'P'). For ID Cards (TD1/TD2), return the first character (usually 'I').
+    *   **Names:** Replace filler '<' characters with a single space. 'DOE<JOHN' becomes surname: 'DOE', givenName: 'JOHN'. 'SMITH<<JOHN<PAUL' becomes surname: 'SMITH', givenName: 'JOHN PAUL'.
+    *   **Sex:** Must be 'M', 'F', or '<'. No other characters are valid.
+    *   **Empty fields:** If a field is entirely composed of filler characters (e.g., '<<<<<<<<<<'), return an empty string for it.
+    *   Return all other fields exactly as they are read from their designated positions, excluding checksum digits.
+
+Process the MRZ from the following document.
 {{media url=photoDataUri}}
 `,
     });
