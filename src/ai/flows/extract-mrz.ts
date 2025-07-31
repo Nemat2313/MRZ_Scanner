@@ -90,7 +90,9 @@ CRITICAL INSTRUCTIONS (MRZ Parsing):
         *   **Examine all lines to correctly identify all fields based on standard MRZ formats.** For TD1/TD2, the Expiry Date and Personal Number might be on the second or third line. You must find them and parse them correctly, not mixing them with other fields.
 
 3.  **Country-Specific Rules:**
-    *   **Uzbekistan (UZB):** The \`personalNumber\` is a 14-digit number. Ensure you extract exactly 14 digits for this field if the issuing country is UZB.
+    *   **Uzbekistan (UZB):** 
+        *   The \`personalNumber\` is a 14-digit number. Ensure you extract exactly 14 digits for this field if the issuing country is UZB.
+        *   The surname might incorrectly include "UZB" at the beginning (e.g., "UZBERGASHOV"). If the issuing country is UZB and the surname starts with "UZB", remove this prefix from the surname field. For example, "UZBERGASHOV" should become "ERGASHOV".
 
 4.  **Output Formatting Rules:**
     *   **Document Type:** For Passports (TD3), return the first character (usually 'P'). For ID Cards (TD1/TD2), return the first character (usually 'I'). No other characters should be present.
