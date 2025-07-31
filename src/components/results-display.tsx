@@ -1,16 +1,24 @@
 'use client';
 
 import Image from 'next/image';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, FileText, Loader2 } from 'lucide-react';
-import type { ScanResult, MrzData } from '@/types';
+import type { ScanResult } from '@/types';
 import { useLanguage } from '@/contexts/language-context';
 
 interface ResultsDisplayProps {
@@ -30,38 +38,12 @@ const StatusIcon = ({ status }: { status: ScanResult['status'] }) => {
   return null;
 };
 
-const MrzDataTable = ({ data, t }: { data: MrzData; t: (key: string) => string }) => {
-  const fields: (keyof MrzData)[] = [
-    'documentType',
-    'issuingCountry',
-    'surname',
-    'givenName',
-    'documentNumber',
-    'nationality',
-    'dateOfBirth',
-    'sex',
-    'expiryDate',
-    'personalNumber',
-  ];
-
-  return (
-    <div className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
-      {fields.map((field) => (
-        <div key={field}>
-          <p className="font-medium text-muted-foreground">{t(field)}</p>
-          <p className="font-mono text-foreground">{data[field]}</p>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 export function ResultsDisplay({ results }: ResultsDisplayProps) {
   const { t } = useLanguage();
 
   if (results.length === 0) {
     return (
-      <Card className="w-full max-w-4xl">
+      <Card>
         <CardHeader>
           <CardTitle>{t('results')}</CardTitle>
         </CardHeader>
@@ -76,55 +58,83 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
   }
 
   return (
-    <Card className="w-full max-w-4xl">
+    <Card>
       <CardHeader>
         <CardTitle>{t('results')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Accordion type="single" collapsible className="w-full">
-          {results.map((result) => (
-            <AccordionItem value={result.id} key={result.id}>
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex w-full items-center justify-between gap-4 pr-4">
-                  <div className="flex items-center gap-2">
-                    <StatusIcon status={result.status} />
-                    <span className="truncate font-medium">{result.fileName}</span>
-                  </div>
-                  {result.status !== 'processing' && (
-                    <Badge
-                      variant={result.status === 'success' ? 'default' : 'destructive'}
-                      className={result.status === 'success' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}
-                    >
-                      {result.status === 'success' ? t('scanSuccessful') : t('scanFailed')}
-                    </Badge>
-                  )}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="pt-2">
-                {result.status === 'error' && (
-                  <p className="text-destructive">{result.error}</p>
-                )}
-                {result.status === 'success' && result.mrzData && (
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="mb-2 font-semibold">{t('originalImage')}</h4>
-                      <Image
-                        src={result.originalImage}
-                        alt="Original Scan"
-                        width={400}
-                        height={250}
-                        className="rounded-lg border object-contain"
-                      />
-                    </div>
-                    <div>
-                      <h4 className="mb-2 font-semibold">{t('mrzInformation')}</h4>
-                      <MrzDataTable data={result.mrzData} t={t} />
-                    </div>
-                  </div>
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]"></TableHead>
+                <TableHead>{t('fileName') || 'File Name'}</TableHead>
+                <TableHead>{t('surname')}</TableHead>
+                <TableHead>{t('givenName')}</TableHead>
+                <TableHead>{t('documentNumber')}</TableHead>
+                <TableHead>{t('nationality')}</TableHead>
+                <TableHead>{t('dateOfBirth')}</TableHead>
+                <TableHead>{t('expiryDate')}</TableHead>
+                <TableHead className="text-right">{t('status') || 'Status'}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {results.map((result) => (
+                <AccordionItem value={result.id} key={result.id} asChild>
+                  <>
+                    <TableRow className="font-mono text-sm">
+                      <TableCell>
+                        <AccordionTrigger className="p-2 [&[data-state=open]>svg]:rotate-180" />
+                      </TableCell>
+                      <TableCell className="font-medium truncate max-w-xs">{result.fileName}</TableCell>
+                      <TableCell>{result.mrzData?.surname}</TableCell>
+                      <TableCell>{result.mrzData?.givenName}</TableCell>
+                      <TableCell>{result.mrzData?.documentNumber}</TableCell>
+                      <TableCell>{result.mrzData?.nationality}</TableCell>
+                      <TableCell>{result.mrzData?.dateOfBirth}</TableCell>
+                      <TableCell>{result.mrzData?.expiryDate}</TableCell>
+                      <TableCell className="text-right">
+                         <div className="flex items-center justify-end gap-2">
+                           <StatusIcon status={result.status} />
+                           {result.status !== 'processing' && (
+                             <Badge
+                               variant={result.status === 'success' ? 'default' : 'destructive'}
+                               className={result.status === 'success' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}
+                             >
+                               {result.status === 'success' ? t('scanSuccessful') : t('scanFailed')}
+                             </Badge>
+                           )}
+                         </div>
+                      </TableCell>
+                    </TableRow>
+                    <AccordionContent asChild>
+                       <tr className="bg-muted/50 hover:bg-muted/50">
+                          <TableCell colSpan={9} className="p-4">
+                              {result.status === 'error' && (
+                                <p className="text-destructive">{result.error}</p>
+                              )}
+                              {(result.status === 'success' || result.status === 'processing') && (
+                                <div>
+                                  <h4 className="mb-2 font-semibold">{t('originalImage')}</h4>
+                                  {result.originalImage ? (
+                                    <Image
+                                      src={result.originalImage}
+                                      alt="Original Scan"
+                                      width={400}
+                                      height={250}
+                                      className="rounded-lg border object-contain bg-white"
+                                    />
+                                  ) : <div className="h-[250px] w-[400px] bg-gray-200 rounded-lg flex items-center justify-center"><Loader2 className="animate-spin"/></div>}
+                                </div>
+                              )}
+                          </TableCell>
+                       </tr>
+                    </AccordionContent>
+                  </>
+                </AccordionItem>
+              ))}
+            </TableBody>
+          </Table>
         </Accordion>
       </CardContent>
     </Card>

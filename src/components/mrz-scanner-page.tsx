@@ -65,18 +65,12 @@ function formatMrzDate(dateStr: string, isExpiry: boolean): string {
   const current2DigitYear = currentYear % 100;
 
   if (isExpiry) {
-     // Expiry dates are always in the future or very recent past.
-     // Heuristic: If expiry year is more than 10 years in the past, it's next century.
-     // Otherwise, it's current century. This handles YY=07 for 2007 vs 1907 etc.
-     // Assumes documents aren't issued with expiry > 90 years in the future.
-     fullYear = (year < current2DigitYear - 10) ? currentCentury + 100 + year : currentCentury + year;
-     // If the calculated year is far in the past, it must be the next century
+     fullYear = currentCentury + year;
      if (fullYear < currentYear - 10) {
         fullYear += 100;
      }
 
   } else { // Date of Birth
-    // DOB is always in the past.
     fullYear = (year > current2DigitYear) ? (currentCentury - 100) + year : currentCentury + year;
   }
   return `${day}.${month}.${fullYear}`;
@@ -92,8 +86,17 @@ const MrzScannerCore = () => {
   const handleFiles = async (files: File[]) => {
     setIsProcessing(true);
 
+    const newScans = files.map((file) => ({
+      id: `${file.name}-${Date.now()}`,
+      fileName: file.name,
+      originalImage: '',
+      status: 'processing' as const,
+    }));
+
+    setResults((prev) => [...newScans, ...prev]);
+
     for (const file of files) {
-      const id = `${file.name}-${Date.now()}`;
+      const id = newScans.find(s => s.fileName === file.name)!.id;
       const reader = new FileReader();
 
       reader.readAsDataURL(file);
@@ -101,15 +104,7 @@ const MrzScannerCore = () => {
         reader.onload = async () => {
           const originalImage = reader.result as string;
 
-          setResults((prev) => [
-            {
-              id,
-              fileName: file.name,
-              originalImage,
-              status: 'processing',
-            },
-            ...prev,
-          ]);
+          setResults((prev) => prev.map(r => r.id === id ? {...r, originalImage} : r));
           
           const mrzResult = await extractMrzAction({ photoDataUri: originalImage });
 
@@ -148,16 +143,11 @@ const MrzScannerCore = () => {
         };
         reader.onerror = () => {
           const errorMsg = 'Failed to read file.';
-          setResults((prev) => [
-            {
-              id,
-              fileName: file.name,
-              originalImage: '',
-              status: 'error' as const,
-              error: errorMsg,
-            },
-            ...prev,
-          ]);
+          setResults((prev) =>
+            prev.map((r) =>
+              r.id === id ? { ...r, status: 'error', error: errorMsg } : r
+            )
+          );
           toast({ variant: 'destructive', title: 'Error', description: errorMsg });
           resolve();
         };
@@ -206,7 +196,7 @@ const MrzScannerCore = () => {
         </section>
 
         <section className="flex flex-col items-center">
-          <div className="w-full max-w-4xl">
+          <div className="w-full max-w-7xl">
             <div className="flex justify-end gap-2 mb-4">
                {results.length > 0 && (
                 <Button
