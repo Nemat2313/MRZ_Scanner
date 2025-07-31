@@ -72,6 +72,21 @@ function formatMrzDate(dateStr: string, isExpiry: boolean): string {
   return `${dayStr}.${monthStr}.${fullYear}`;
 }
 
+function formatDate(dateStr: string | undefined): string {
+  if (!dateStr) return '';
+  // Try to parse dates like "2015-08-25", "25.08.2015", "08/25/2015" etc.
+  const date = new Date(dateStr);
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return dateStr; // Return original string if parsing fails
+  }
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}.${month}.${year}`;
+}
+
 
 const Overview = ({ results, isProcessing }: { results: ScanResult[], isProcessing: boolean }) => {
   const { t } = useLanguage();
@@ -174,6 +189,7 @@ const MrzScannerCore = () => {
               ...mrzResult.data,
               dateOfBirth: formatMrzDate(mrzResult.data.dateOfBirth, false),
               expiryDate: formatMrzDate(mrzResult.data.expiryDate, true),
+              dateOfIssue: formatDate(mrzResult.data.dateOfIssue),
             };
 
             setResults((prev) =>
