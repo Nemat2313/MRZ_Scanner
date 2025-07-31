@@ -9,7 +9,7 @@ import { LanguageProvider, useLanguage } from '@/contexts/language-context';
 import { FileUploader } from './file-uploader';
 import { ResultsDisplay } from './results-display';
 import { Button } from './ui/button';
-import { Download, ScanText, Trash2, FileUp } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { LanguageSwitcher } from './language-switcher';
 import {
   DropdownMenu,
@@ -28,14 +28,16 @@ const Header = () => {
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 256 256"
             className="h-8 w-8 mr-2 rounded-none"
+            fill="none"
           >
-            <path
-              fill="#6A2C90"
-              d="M128 0C93.8 0 63.2 11.2 39.1 31.9V256h111.8c54.7 0 99.1-44.4 99.1-99.1V31.9C227.4 11.2 196.8 0 162.6 0H128zm0 29.1h34.6c36.4 0 66.1 29.6 66.1 66.1s-29.6 66.1-66.1 66.1H128V29.1z"
-            />
-            <path
-              fill="#6EBE44"
-              d="M109.4 162.6L43.3 96.5l20.6-20.6 45.5 45.5 91-91 20.6 20.6-111.6 111.6z"
+             <rect width="256" height="256" fill="none" />
+             <path 
+                fill="hsl(var(--primary))"
+                d="M128,24A104,104,0,1,0,232,128,104.1,104.1,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z"
+             />
+             <path 
+                fill="hsl(var(--accent))"
+                d="M168,88H132.3a28,28,0,0,0-52.6,0H88a8,8,0,0,0,0,16h4v48a8,8,0,0,0,16,0V104h32v48a8,8,0,0,0,16,0V104h4a8,8,0,0,0,0-16Z"
             />
           </svg>
           <h1 className="text-xl font-bold tracking-tight">Plain2Do</h1>
@@ -64,14 +66,11 @@ function formatMrzDate(dateStr: string, isExpiry: boolean): string {
 
   if (isExpiry) {
      // Expiry dates are always in the future or very recent past.
-     // A 50-year window is a common approach.
-     const threshold = (current2DigitYear + 50) % 100;
-     if (year < threshold) {
-        fullYear = currentCentury + year;
-     } else {
-        fullYear = currentCentury - 100 + year;
-     }
-     // If the calculated year is far in the past, assume next century
+     // Heuristic: If expiry year is more than 10 years in the past, it's next century.
+     // Otherwise, it's current century. This handles YY=07 for 2007 vs 1907 etc.
+     // Assumes documents aren't issued with expiry > 90 years in the future.
+     fullYear = (year < current2DigitYear - 10) ? currentCentury + 100 + year : currentCentury + year;
+     // If the calculated year is far in the past, it must be the next century
      if (fullYear < currentYear - 10) {
         fullYear += 100;
      }

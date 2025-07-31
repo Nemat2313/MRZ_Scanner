@@ -26,7 +26,7 @@ const MrzDataSchema = z.object({
   issuingCountry: z.string().describe('The three-letter code of the issuing country.'),
   surname: z.string().describe("The surname of the holder."),
   givenName: z.string().describe("The given name(s) of the holder."),
-  documentNumber: z.string().describe('The passport or document number.'),
+  documentNumber: z.string().describe('The passport or document number. MUST NOT BE EMPTY.'),
   nationality: z.string().describe('The three-letter code of the holder\'s nationality.'),
   dateOfBirth: z.string().describe("The holder's date of birth in YYMMDD format."),
   sex: z.string().describe('The sex of the holder (M, F, or < for non-specified).'),
@@ -77,17 +77,21 @@ CRITICAL INSTRUCTIONS:
 
     *   **TD1/TD2 Format (ID Cards - often 3 lines):**
         *   **Line 1 (TD1 example):**
-            *   Chars 1-2: Document Type. The first character is 'I'. The second character can vary (e.g., 'D', 'V', '<'). For the 'documentType' field, return ONLY the first character 'I'.
+            *   Chars 1-2: Document Type. The first character is 'I'. The second character can vary (e.g., 'D', 'V', '<').
             *   Chars 3-5: Issuing Country.
             *   Chars 6-14: Document Number.
             *   ... other fields
-        *   **Examine all lines to correctly identify all fields based on standard MRZ formats.**
+        *   **Examine all lines to correctly identify all fields based on standard MRZ formats.** For TD1/TD2, the Expiry Date and Personal Number might be on the second or third line. You must find them and parse them correctly, not mixing them with other fields.
 
-3.  **Output Formatting Rules:**
-    *   **Document Type:** For Passports (TD3), return the first character (usually 'P'). For ID Cards (TD1/TD2), return the first character (usually 'I').
+3.  **Country-Specific Rules:**
+    *   **Uzbekistan (UZB):** The \`personalNumber\` is a 14-digit number. Ensure you extract exactly 14 digits for this field if the issuing country is UZB.
+
+4.  **Output Formatting Rules:**
+    *   **Document Type:** For Passports (TD3), return the first character (usually 'P'). For ID Cards (TD1/TD2), return the first character (usually 'I'). No other characters should be present.
+    *   **Document Number:** This field is mandatory. If you cannot extract a valid Document Number, you must fail the entire process. Do not return an empty string for this field.
     *   **Names:** Replace filler '<' characters with a single space. 'DOE<JOHN' becomes surname: 'DOE', givenName: 'JOHN'. 'SMITH<<JOHN<PAUL' becomes surname: 'SMITH', givenName: 'JOHN PAUL'.
     *   **Sex:** Must be 'M', 'F', or '<'. No other characters are valid.
-    *   **Empty fields:** If a field is entirely composed of filler characters (e.g., '<<<<<<<<<<'), return an empty string for it.
+    *   **Empty fields:** If a field is entirely composed of filler characters (e.g., '<<<<<<<<<<'), return an empty string for it, except for the Document Number.
     *   Return all other fields exactly as they are read from their designated positions, excluding checksum digits.
 
 Process the MRZ from the following document.
@@ -96,8 +100,8 @@ Process the MRZ from the following document.
     });
 
     const { output } = await prompt(input);
-    if (!output) {
-      throw new Error('Failed to extract MRZ data from the document.');
+    if (!output || !output.documentNumber) {
+      throw new Error('Failed to extract a valid Document Number from the MRZ.');
     }
     return output;
   }
