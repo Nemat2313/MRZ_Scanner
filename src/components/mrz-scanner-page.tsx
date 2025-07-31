@@ -55,11 +55,15 @@ const Header = () => {
 
 function formatMrzDate(dateStr: string, isExpiry: boolean): string {
   if (!/^\d{6}$/.test(dateStr)) {
-    return dateStr;
+    return ''; // Return empty if not in YYMMDD format
   }
   const year = parseInt(dateStr.substring(0, 2), 10);
-  const month = dateStr.substring(2, 4);
-  const day = dateStr.substring(4, 6);
+  const month = parseInt(dateStr.substring(2, 4), 10);
+  const day = parseInt(dateStr.substring(4, 6), 10);
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return ''; // Basic validation for month and day
+  }
 
   let fullYear: number;
   const currentYear = new Date().getFullYear();
@@ -71,12 +75,19 @@ function formatMrzDate(dateStr: string, isExpiry: boolean): string {
      if (fullYear < currentYear - 10) {
         fullYear += 100;
      }
-
   } else { // Date of Birth
     fullYear = (year > current2DigitYear) ? (currentCentury - 100) + year : currentCentury + year;
+    if (fullYear < 1940) {
+        return ''; // Return empty if birth year is before 1940
+    }
   }
-  return `${day}.${month}.${fullYear}`;
+  
+  const monthStr = month.toString().padStart(2, '0');
+  const dayStr = day.toString().padStart(2, '0');
+
+  return `${dayStr}.${monthStr}.${fullYear}`;
 }
+
 
 const Overview = ({ results, isProcessing }: { results: ScanResult[], isProcessing: boolean }) => {
   const { t } = useLanguage();
@@ -310,3 +321,5 @@ export function MrzScannerPage() {
     </LanguageProvider>
   );
 }
+
+    

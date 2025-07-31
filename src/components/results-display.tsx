@@ -63,6 +63,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
               <TableHead className="w-[50px]"></TableHead>
               <TableHead>{t('fileName') || 'File Name'}</TableHead>
               <TableHead>{t('documentType')}</TableHead>
+              <TableHead>{t('issuingCountry')}</TableHead>
               <TableHead>{t('surname')}</TableHead>
               <TableHead>{t('givenName')}</TableHead>
               <TableHead>{t('documentNumber')}</TableHead>
@@ -81,6 +82,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                 </TableCell>
                 <TableCell className="font-medium truncate max-w-xs">{result.fileName}</TableCell>
                 <TableCell>{result.mrzData?.documentType}</TableCell>
+                <TableCell>{result.mrzData?.issuingCountry}</TableCell>
                 <TableCell>{result.mrzData?.surname}</TableCell>
                 <TableCell>{result.mrzData?.givenName}</TableCell>
                 <TableCell>{result.mrzData?.documentNumber}</TableCell>
@@ -106,3 +108,5 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
     </Card>
   );
 }
+
+    
