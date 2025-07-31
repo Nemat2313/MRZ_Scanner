@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Download, Trash2, CheckCircle, AlertTriangle, Loader2, BookUser } from 'lucide-react';
 import { LanguageSwitcher } from './language-switcher';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -156,6 +158,7 @@ const Overview = ({ results, isProcessing }: { results: ScanResult[], isProcessi
 const MrzScannerCore = () => {
   const [results, setResults] = useState<ScanResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -269,18 +272,25 @@ const MrzScannerCore = () => {
     <div className="flex min-h-screen w-full flex-col">
       <Header />
       <main className="flex-1 space-y-8 p-4 sm:p-8 md:p-12">
-        <section className="flex flex-col items-center gap-8">
+        <section className="flex flex-col items-center gap-6">
           <FileUploader
             onFilesAccepted={handleFiles}
             isProcessing={isProcessing}
+            isDisabled={!consentGiven}
           />
+          <div className="flex items-center space-x-2">
+            <Checkbox id="consent" onCheckedChange={(checked) => setConsentGiven(checked as boolean)} />
+            <Label htmlFor="consent" className="text-sm text-muted-foreground max-w-xl">
+              {t('dataProcessingConsent')}
+            </Label>
+          </div>
            <div className="w-full max-w-7xl">
             <Overview results={results} isProcessing={isProcessing} />
            </div>
         </section>
 
         <section>
-          <div className="w-full">
+          <div className="w-full max-w-7xl mx-auto">
             <div className="flex justify-end gap-2 mb-4">
                {results.length > 0 && (
                 <Button

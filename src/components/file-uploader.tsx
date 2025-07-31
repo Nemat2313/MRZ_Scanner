@@ -8,9 +8,10 @@ import { useLanguage } from '@/contexts/language-context';
 interface FileUploaderProps {
   onFilesAccepted: (files: File[]) => void;
   isProcessing: boolean;
+  isDisabled: boolean;
 }
 
-export function FileUploader({ onFilesAccepted, isProcessing }: FileUploaderProps) {
+export function FileUploader({ onFilesAccepted, isProcessing, isDisabled }: FileUploaderProps) {
   const { t } = useLanguage();
   const [isDragActive, setIsDragActive] = useState(false);
 
@@ -31,7 +32,7 @@ export function FileUploader({ onFilesAccepted, isProcessing }: FileUploaderProp
       'image/jpeg': ['.jpg', '.jpeg'],
       'application/pdf': ['.pdf'],
     },
-    disabled: isProcessing,
+    disabled: isProcessing || isDisabled,
     onDragEnter: () => setIsDragActive(true),
     onDragLeave: () => setIsDragActive(false),
   });
@@ -39,9 +40,9 @@ export function FileUploader({ onFilesAccepted, isProcessing }: FileUploaderProp
   return (
     <div
       {...getRootProps()}
-      className={`w-full max-w-2xl cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-all duration-300
+      className={`w-full max-w-2xl rounded-xl border-2 border-dashed p-8 text-center transition-all duration-300
       ${
-        isProcessing
+        isProcessing || isDisabled
           ? 'cursor-not-allowed border-muted bg-muted/50'
           : isDragActive
           ? 'border-primary bg-primary/10'
@@ -52,11 +53,13 @@ export function FileUploader({ onFilesAccepted, isProcessing }: FileUploaderProp
       <div className="flex flex-col items-center justify-center gap-4">
         <UploadCloud
           className={`h-16 w-16 transition-colors ${
+            isDisabled ? 'text-muted-foreground/50' : 
             isDragActive ? 'text-primary' : 'text-muted-foreground'
           }`}
         />
         <h3 className="text-2xl font-bold">{t('uploadTitle')}</h3>
         <p className="text-muted-foreground">{t('uploadSubtitle')}</p>
+        {isDisabled && <p className="text-sm font-semibold text-destructive">{t('consentRequired')}</p>}
       </div>
     </div>
   );
