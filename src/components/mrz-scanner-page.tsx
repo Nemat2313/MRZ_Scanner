@@ -11,7 +11,7 @@ import { ResultsDisplay } from './results-display';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
-import { Download, Trash2, CheckCircle, AlertTriangle, Loader2, BookUser, CreditCard } from 'lucide-react';
+import { Download, Trash2, CheckCircle, AlertTriangle, Loader2, BookUser } from 'lucide-react';
 import { LanguageSwitcher } from './language-switcher';
 import {
   DropdownMenu,
@@ -27,7 +27,6 @@ const Header = () => {
       <div className="container flex h-16 max-w-screen-2xl items-center">
         <div className="mr-4 flex items-center">
           <BookUser className="h-8 w-8 mr-2 text-primary" />
-          <CreditCard className="h-7 w-7 mr-3 text-accent" />
           <h1 className="text-xl font-bold tracking-tight">{t('appName')}</h1>
           <span className="text-xl text-muted-foreground ml-2 font-medium">| {t('appSubtitle')}</span>
         </div>
@@ -263,7 +262,7 @@ const MrzScannerCore = () => {
         </section>
 
         <section className="flex flex-col items-center">
-          <div className="w-full max-w-7xl">
+          <div className="w-full">
             <div className="flex justify-end gap-2 mb-4">
                {results.length > 0 && (
                 <Button
@@ -297,7 +296,7 @@ const MrzScannerCore = () => {
         </section>
       </main>
       <footer className="py-4">
-        <div className="container mx-auto text-center text-xs text-muted-foreground">
+        <div className="container mx-auto text-center text-sm text-muted-foreground">
           <p>{t('privacyNotice')}</p>
         </div>
       </footer>
