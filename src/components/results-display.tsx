@@ -80,8 +80,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
             </TableHeader>
             <TableBody>
               {results.map((result) => (
-                <AccordionItem value={result.id} key={result.id} asChild>
-                  <>
+                <AccordionItem value={result.id} key={result.id}>
                     <TableRow className="font-mono text-sm">
                       <TableCell>
                         <AccordionTrigger className="p-2 [&[data-state=open]>svg]:rotate-180" />
@@ -130,7 +129,6 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                           </TableCell>
                        </tr>
                     </AccordionContent>
-                  </>
                 </AccordionItem>
               ))}
             </TableBody>
