@@ -256,34 +256,6 @@ const MrzScannerCore = () => {
       <Header />
       <main className="flex-1 space-y-8 p-4 sm:p-8 md:p-12">
         <section className="flex flex-col items-center gap-8">
-           <svg
-              viewBox="0 0 100 80"
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-20"
-            >
-              <defs>
-                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style={{ stopColor: '#7C4DFF', stopOpacity: 1 }} />
-                  <stop offset="100%" style={{ stopColor: '#448AFF', stopOpacity: 1 }} />
-                </linearGradient>
-                 <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style={{ stopColor: '#8BC34A', stopOpacity: 1 }} />
-                  <stop offset="100%" style={{ stopColor: '#CDDC39', stopOpacity: 1 }} />
-                </linearGradient>
-              </defs>
-              <path
-                d="M61.94,0H20.25C9.07,0,0,9.07,0,20.25V59.75C0,70.93,9.07,80,20.25,80H94.5C97.54,80,100,77.54,100,74.5V28.18C100,12.64,87.36,0,71.82,0H61.94Z"
-                style={{ fill: 'hsl(var(--primary))' }}
-              />
-              <path
-                d="M48.78,54.62c-2.22-2.22-5.18-3.44-8.28-3.44s-6.06,1.22-8.28,3.44c-4.57,4.57-4.57,11.99,0,16.56,2.22,2.22,5.18,3.44,8.28,3.44s6.06-1.22,8.28-3.44c4.57-4.57,4.57-11.99,0-16.56Zm-8.28,13.12c-1.34,0-2.67-.52-3.68-1.53-2.03-2.03-2.03-5.33,0-7.36,1-1,2.34-1.53,3.68-1.53s2.67,.52,3.68,1.53c2.03,2.03,2.03,5.33,0,7.36-1,1-2.34,1.53-3.68,1.53Z"
-                style={{ fill: '#ffffff' }}
-              />
-               <path
-                d="M59.9,29.83l-19.67,19.67c-.78,.78-2.05,.78-2.83,0l-9.08-9.08c-.78-.78-.78-2.05,0-2.83l2.83-2.83c.78-.78,2.05-.78,2.83,0l4.83,4.83,15.42-15.42c.78-.78,2.05-.78,2.83,0l2.83,2.83c.78,.78,.78,2.05,0,2.83Z"
-                style={{ fill: 'hsl(var(--accent))' }}
-              />
-            </svg>
           <FileUploader
             onFilesAccepted={handleFiles}
             isProcessing={isProcessing}
@@ -338,5 +310,3 @@ export function MrzScannerPage() {
     </LanguageProvider>
   );
 }
-
-    
