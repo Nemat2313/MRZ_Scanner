@@ -76,17 +76,31 @@ function formatMrzDate(dateStr: string, isExpiry: boolean): string {
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
-  // Try to parse dates like "2015-08-25", "25.08.2015", "08/25/2015" etc.
-  const date = new Date(dateStr);
-  // Check if date is valid
-  if (isNaN(date.getTime())) {
-    return dateStr; // Return original string if parsing fails
+  // Normalize separators: replace space, slash, or dash with a dot.
+  const normalizedDateStr = dateStr.replace(/[\s\/-]/g, '.');
+  
+  // Try to parse dates like "25.08.2015"
+  const parts = normalizedDateStr.split('.');
+  if (parts.length === 3) {
+    const [day, month, year] = parts.map(p => parseInt(p, 10));
+    if (!isNaN(day) && !isNaN(month) && !isNaN(year) &&
+        day > 0 && day <= 31 && month > 0 && month <= 12 &&
+        String(year).length === 4)
+    {
+       return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${year}`;
+    }
   }
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
+  
+  // Fallback for other formats like YYYY-MM-DD
+  const date = new Date(dateStr);
+  if (!isNaN(date.getTime())) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
 
-  return `${day}.${month}.${year}`;
+  return dateStr; // Return original string if all parsing fails
 }
 
 
