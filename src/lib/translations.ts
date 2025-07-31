@@ -42,6 +42,7 @@ export const translations: Record<Language, Record<string, string>> = {
     dateOfIssue: 'Date of Issue',
     placeOfBirth: 'Place of Birth',
     authority: 'Authority',
+    dataManagement: 'Data Management',
   },
   tr: {
     appName: 'MRZ Tarayıcı',
@@ -84,6 +85,7 @@ export const translations: Record<Language, Record<string, string>> = {
     dateOfIssue: 'Veriliş Tarihi',
     placeOfBirth: 'Doğum Yeri',
     authority: 'Makam',
+    dataManagement: 'Veri Yönetimi',
   },
   ru: {
     appName: 'Сканер МРЗ',
@@ -126,5 +128,6 @@ export const translations: Record<Language, Record<string, string>> = {
     dateOfIssue: 'Дата выдачи',
     placeOfBirth: 'Место рождения',
     authority: 'Орган выдачи',
+    dataManagement: 'Управление данными',
   },
 };

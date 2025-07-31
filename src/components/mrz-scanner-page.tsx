@@ -233,8 +233,7 @@ const MrzScannerCore = () => {
     setIsProcessing(false);
   };
 
-  const getHeaders = (): Record<string, string> => ({
-    fileName: t('fileName'),
+  const getHeaders = (): Record<keyof MrzData | 'fileName', string> => ({
     documentType: t('documentType'),
     issuingCountry: t('issuingCountry'),
     surname: t('surname'),
@@ -248,6 +247,7 @@ const MrzScannerCore = () => {
     dateOfIssue: t('dateOfIssue'),
     placeOfBirth: t('placeOfBirth'),
     authority: t('authority'),
+    fileName: t('fileName'),
   });
 
   const handleExportCsv = () => {
@@ -314,7 +314,7 @@ const MrzScannerCore = () => {
         </section>
       </main>
       <footer className="py-4">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
+        <div className="container mx-auto text-center text-base text-muted-foreground">
           <p>{t('privacyNotice')}</p>
         </div>
       </footer>

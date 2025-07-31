@@ -63,7 +63,6 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
               <TableRow>
                 <TableHead className="w-[50px]"></TableHead>
                 <TableHead>{t('status') || 'Status'}</TableHead>
-                <TableHead>{t('fileName') || 'File Name'}</TableHead>
                 <TableHead>{t('documentType')}</TableHead>
                 <TableHead>{t('issuingCountry')}</TableHead>
                 <TableHead>{t('surname')}</TableHead>
@@ -77,6 +76,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                 <TableHead>{t('dateOfIssue')}</TableHead>
                 <TableHead>{t('placeOfBirth')}</TableHead>
                 <TableHead>{t('authority')}</TableHead>
+                <TableHead>{t('fileName') || 'File Name'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -95,7 +95,6 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                          </Badge>
                        )}
                   </TableCell>
-                  <TableCell className="font-medium truncate max-w-xs">{result.fileName}</TableCell>
                   <TableCell>{result.mrzData?.documentType}</TableCell>
                   <TableCell>{result.mrzData?.issuingCountry}</TableCell>
                   <TableCell>{result.mrzData?.surname}</TableCell>
@@ -109,6 +108,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                   <TableCell>{result.mrzData?.dateOfIssue}</TableCell>
                   <TableCell>{result.mrzData?.placeOfBirth}</TableCell>
                   <TableCell>{result.mrzData?.authority}</TableCell>
+                  <TableCell className="font-medium truncate max-w-xs">{result.fileName}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

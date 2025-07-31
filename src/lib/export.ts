@@ -7,9 +7,9 @@ function getSuccessfulScans(data: ScanResult[]) {
 
 function createDataArray(
   scans: ScanResult[],
-  headers: Record<string, string>
+  headers: Record<keyof MrzData | 'fileName', string>
 ) {
-  const headerKeys = Object.keys(headers);
+  const headerKeys = Object.keys(headers) as (keyof MrzData | 'fileName')[];
   const headerValues = Object.values(headers);
 
   const dataArray = [headerValues];
@@ -34,7 +34,7 @@ function createDataArray(
 
 export function exportToCsv(
   data: ScanResult[],
-  headers: Record<string, string>
+  headers: Record<keyof MrzData | 'fileName', string>
 ) {
   const successfulScans = getSuccessfulScans(data);
   if (successfulScans.length === 0) return;
@@ -58,7 +58,7 @@ export function exportToCsv(
 
 export function exportToXlsx(
   data: ScanResult[],
-  headers: Record<string, string>
+  headers: Record<keyof MrzData | 'fileName', string>
 ) {
   const successfulScans = getSuccessfulScans(data);
   if (successfulScans.length === 0) return;
