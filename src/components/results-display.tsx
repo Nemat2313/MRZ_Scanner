@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, FileText, Loader2 } from 'lucide-react';
 import type { ScanResult } from '@/types';
 import { useLanguage } from '@/contexts/language-context';
+import React from 'react';
 
 interface ResultsDisplayProps {
   results: ScanResult[];
@@ -80,7 +81,8 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
             </TableHeader>
             <TableBody>
               {results.map((result) => (
-                <AccordionItem value={result.id} key={result.id}>
+                <AccordionItem value={result.id} key={result.id} asChild>
+                   <React.Fragment>
                     <TableRow className="font-mono text-sm">
                       <TableCell>
                         <AccordionTrigger className="p-2 [&[data-state=open]>svg]:rotate-180" />
@@ -129,6 +131,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                           </TableCell>
                        </tr>
                     </AccordionContent>
+                   </React.Fragment>
                 </AccordionItem>
               ))}
             </TableBody>
