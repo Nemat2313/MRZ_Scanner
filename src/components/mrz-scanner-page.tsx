@@ -11,7 +11,7 @@ import { ResultsDisplay } from './results-display';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
-import { Download, Trash2, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { Download, Trash2, CheckCircle, AlertTriangle, Loader2, BookUser, CreditCard } from 'lucide-react';
 import { LanguageSwitcher } from './language-switcher';
 import {
   DropdownMenu,
@@ -26,24 +26,10 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center">
         <div className="mr-4 flex items-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 256 256"
-            className="h-8 w-8 mr-2 rounded-none"
-            fill="none"
-          >
-             <rect width="256" height="256" fill="none" />
-             <path 
-                fill="hsl(var(--primary))"
-                d="M128,24A104,104,0,1,0,232,128,104.1,104.1,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z"
-             />
-             <path 
-                fill="hsl(var(--accent))"
-                d="M168,88H132.3a28,28,0,0,0-52.6,0H88a8,8,0,0,0,0,16h4v48a8,8,0,0,0,16,0V104h32v48a8,8,0,0,0,16,0V104h4a8,8,0,0,0,0,16Z"
-            />
-          </svg>
-          <h1 className="text-xl font-bold tracking-tight">Plain2Do</h1>
-          <span className="text-xl text-muted-foreground ml-2 font-medium">| MRZ Scanner</span>
+          <BookUser className="h-8 w-8 mr-2 text-primary" />
+          <CreditCard className="h-7 w-7 mr-3 text-accent" />
+          <h1 className="text-xl font-bold tracking-tight">{t('appName')}</h1>
+          <span className="text-xl text-muted-foreground ml-2 font-medium">| {t('appSubtitle')}</span>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <LanguageSwitcher />
@@ -310,6 +296,11 @@ const MrzScannerCore = () => {
           </div>
         </section>
       </main>
+      <footer className="py-4">
+        <div className="container mx-auto text-center text-xs text-muted-foreground">
+          <p>{t('privacyNotice')}</p>
+        </div>
+      </footer>
     </div>
   );
 };
@@ -321,5 +312,3 @@ export function MrzScannerPage() {
     </LanguageProvider>
   );
 }
-
-    

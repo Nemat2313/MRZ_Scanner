@@ -8,9 +8,9 @@ body {
 
 @layer base {
   :root {
-    --background: 231 67% 94%;
+    --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
-    --card: 231 67% 99%;
+    --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
@@ -24,8 +24,8 @@ body {
     --accent-foreground: 93 54% 5%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 231 20% 85%;
-    --input: 231 20% 89%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
     --ring: 265 53% 36%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -68,9 +68,5 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(135deg, hsl(231, 67%, 97%), hsl(var(--background)));
-  }
-  .dark body {
-    background: linear-gradient(135deg, hsl(240, 10%, 7%), hsl(var(--background)));
   }
 }

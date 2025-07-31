@@ -3,6 +3,7 @@ import type { Language } from '@/types';
 export const translations: Record<Language, Record<string, string>> = {
   en: {
     appName: 'MRZ Scanner',
+    appSubtitle: 'Pick Document Data',
     uploadTitle: 'Upload Document Scans',
     uploadSubtitle: 'Drag & drop files here or click to browse. Supports PDF, PNG, JPG, JPEG.',
     uploading: 'Uploading...',
@@ -37,9 +38,11 @@ export const translations: Record<Language, Record<string, string>> = {
     failed: 'Failed',
     processingProgress: 'Processing...',
     scanDetailsFor: 'Scan details for',
+    privacyNotice: 'Your data is processed locally and is never recorded or shared.',
   },
   tr: {
     appName: 'MRZ Tarayıcı',
+    appSubtitle: 'Belge Verilerini Al',
     uploadTitle: 'Belge Taramalarını Yükle',
     uploadSubtitle: 'Dosyaları buraya sürükleyip bırakın veya göz atmak için tıklayın. PDF, PNG, JPG, JPEG desteklenir.',
     uploading: 'Yükleniyor...',
@@ -74,9 +77,11 @@ export const translations: Record<Language, Record<string, string>> = {
     failed: 'Başarısız',
     processingProgress: 'İşleniyor...',
     scanDetailsFor: 'Tarama detayları:',
+    privacyNotice: 'Verileriniz yerel olarak işlenir ve asla kaydedilmez veya paylaşılmaz.',
   },
   ru: {
     appName: 'Сканер МРЗ',
+    appSubtitle: 'Получить данные документа',
     uploadTitle: 'Загрузить сканы документов',
     uploadSubtitle: 'Перетащите файлы сюда или нажмите для выбора. Поддерживаются PDF, PNG, JPG, JPEG.',
     uploading: 'Загрузка...',
@@ -111,5 +116,6 @@ export const translations: Record<Language, Record<string, string>> = {
     failed: 'Неудачно',
     processingProgress: 'Обработка...',
     scanDetailsFor: 'Детали сканирования для',
+    privacyNotice: 'Ваши данные обрабатываются локально и никогда не записываются и не передаются.',
   },
 };
