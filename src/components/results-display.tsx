@@ -57,56 +57,64 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
         <CardTitle>{t('results')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]"></TableHead>
-              <TableHead>{t('fileName') || 'File Name'}</TableHead>
-              <TableHead>{t('documentType')}</TableHead>
-              <TableHead>{t('issuingCountry')}</TableHead>
-              <TableHead>{t('surname')}</TableHead>
-              <TableHead>{t('givenName')}</TableHead>
-              <TableHead>{t('documentNumber')}</TableHead>
-              <TableHead>{t('personalNumber')}</TableHead>
-              <TableHead>{t('nationality')}</TableHead>
-              <TableHead>{t('dateOfBirth')}</TableHead>
-              <TableHead>{t('expiryDate')}</TableHead>
-              <TableHead className="text-right">{t('status') || 'Status'}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {results.map((result) => (
-              <TableRow key={result.id} className="font-mono text-sm">
-                <TableCell>
-                  <StatusIcon status={result.status} />
-                </TableCell>
-                <TableCell className="font-medium truncate max-w-xs">{result.fileName}</TableCell>
-                <TableCell>{result.mrzData?.documentType}</TableCell>
-                <TableCell>{result.mrzData?.issuingCountry}</TableCell>
-                <TableCell>{result.mrzData?.surname}</TableCell>
-                <TableCell>{result.mrzData?.givenName}</TableCell>
-                <TableCell>{result.mrzData?.documentNumber}</TableCell>
-                <TableCell>{result.mrzData?.personalNumber}</TableCell>
-                <TableCell>{result.mrzData?.nationality}</TableCell>
-                <TableCell>{result.mrzData?.dateOfBirth}</TableCell>
-                <TableCell>{result.mrzData?.expiryDate}</TableCell>
-                <TableCell className="text-right">
-                   {result.status !== 'processing' && (
-                       <Badge
-                         variant={result.status === 'success' ? 'default' : 'destructive'}
-                         className={result.status === 'success' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}
-                       >
-                         {result.status === 'success' ? t('scanSuccessful') : t('scanFailed')}
-                       </Badge>
-                     )}
-                </TableCell>
+        <div className="w-full overflow-x-auto">
+          <Table className="min-w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]"></TableHead>
+                <TableHead>{t('status') || 'Status'}</TableHead>
+                <TableHead>{t('fileName') || 'File Name'}</TableHead>
+                <TableHead>{t('documentType')}</TableHead>
+                <TableHead>{t('issuingCountry')}</TableHead>
+                <TableHead>{t('surname')}</TableHead>
+                <TableHead>{t('givenName')}</TableHead>
+                <TableHead>{t('documentNumber')}</TableHead>
+                <TableHead>{t('nationality')}</TableHead>
+                <TableHead>{t('dateOfBirth')}</TableHead>
+                <TableHead>{t('sex')}</TableHead>
+                <TableHead>{t('expiryDate')}</TableHead>
+                <TableHead>{t('personalNumber')}</TableHead>
+                <TableHead>{t('dateOfIssue')}</TableHead>
+                <TableHead>{t('placeOfBirth')}</TableHead>
+                <TableHead>{t('authority')}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {results.map((result) => (
+                <TableRow key={result.id} className="font-mono text-sm">
+                  <TableCell>
+                    <StatusIcon status={result.status} />
+                  </TableCell>
+                  <TableCell>
+                     {result.status !== 'processing' && (
+                         <Badge
+                           variant={result.status === 'success' ? 'default' : 'destructive'}
+                           className={result.status === 'success' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}
+                         >
+                           {result.status === 'success' ? t('scanSuccessful') : t('scanFailed')}
+                         </Badge>
+                       )}
+                  </TableCell>
+                  <TableCell className="font-medium truncate max-w-xs">{result.fileName}</TableCell>
+                  <TableCell>{result.mrzData?.documentType}</TableCell>
+                  <TableCell>{result.mrzData?.issuingCountry}</TableCell>
+                  <TableCell>{result.mrzData?.surname}</TableCell>
+                  <TableCell>{result.mrzData?.givenName}</TableCell>
+                  <TableCell>{result.mrzData?.documentNumber}</TableCell>
+                  <TableCell>{result.mrzData?.nationality}</TableCell>
+                  <TableCell>{result.mrzData?.dateOfBirth}</TableCell>
+                  <TableCell>{result.mrzData?.sex}</TableCell>
+                  <TableCell>{result.mrzData?.expiryDate}</TableCell>
+                  <TableCell>{result.mrzData?.personalNumber}</TableCell>
+                  <TableCell>{result.mrzData?.dateOfIssue}</TableCell>
+                  <TableCell>{result.mrzData?.placeOfBirth}</TableCell>
+                  <TableCell>{result.mrzData?.authority}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
 }
-
-    

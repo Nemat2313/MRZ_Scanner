@@ -28,7 +28,6 @@ const Header = () => {
         <div className="mr-4 flex items-center">
           <BookUser className="h-8 w-8 mr-2 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">{t('appName')}</h1>
-          <span className="text-xl text-muted-foreground ml-2 font-medium">| {t('appSubtitle')}</span>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <LanguageSwitcher />
@@ -230,6 +229,9 @@ const MrzScannerCore = () => {
     sex: t('sex'),
     expiryDate: t('expiryDate'),
     personalNumber: t('personalNumber'),
+    dateOfIssue: t('dateOfIssue'),
+    placeOfBirth: t('placeOfBirth'),
+    authority: t('authority'),
   });
 
   const handleExportCsv = () => {
@@ -261,7 +263,7 @@ const MrzScannerCore = () => {
            </div>
         </section>
 
-        <section className="flex flex-col items-center">
+        <section>
           <div className="w-full">
             <div className="flex justify-end gap-2 mb-4">
                {results.length > 0 && (

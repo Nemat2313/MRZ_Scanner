@@ -32,6 +32,9 @@ const MrzDataSchema = z.object({
   sex: z.string().describe('The sex of the holder (M, F, or < for non-specified).'),
   expiryDate: z.string().describe('The expiry date of the document in YYMMDD format.'),
   personalNumber: z.string().describe('The personal number or other optional data. Can be an empty string.'),
+  dateOfIssue: z.string().optional().describe("The date of issue of the document. Can be an empty string if not found."),
+  placeOfBirth: z.string().optional().describe("The place of birth of the holder. Can be an empty string if not found."),
+  authority: z.string().optional().describe("The issuing authority of the document. Can be an empty string if not found."),
 });
 
 // Re-exporting the Zod schema's inferred type to align with the manually defined type
@@ -48,11 +51,14 @@ const extractMrzFlow = ai.defineFlow(
       name: 'extractMrzPrompt',
       input: { schema: ExtractMrzInputSchema },
       output: { schema: MrzDataSchema },
-      prompt: `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) from official government-issued identity documents. Your task is to extract information with maximum accuracy.
+      prompt: `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) and visually inspecting government-issued identity documents. Your task is to extract information with maximum accuracy.
+
+First, process the MRZ data according to the critical instructions below.
+Second, visually inspect the rest of the document image (outside of the MRZ) to find the 'Date of Issue', 'Place of Birth', and 'Authority' fields. If these fields are not found, return them as empty strings.
 
 If the provided document has multiple pages (e.g., a PDF), first locate the single page that contains the Machine-Readable Zone (MRZ) at the bottom. All subsequent parsing must be performed ONLY on that specific page.
 
-CRITICAL INSTRUCTIONS:
+CRITICAL INSTRUCTIONS (MRZ Parsing):
 1.  **Character Accuracy:** Be extremely careful about common OCR errors. 'O' is a letter, '0' is a digit. 'I' is a letter, '1' is a digit. '<' is a filler character. Double-check every character.
 
 2.  **Field Parsing by Format:**
@@ -88,13 +94,13 @@ CRITICAL INSTRUCTIONS:
 
 4.  **Output Formatting Rules:**
     *   **Document Type:** For Passports (TD3), return the first character (usually 'P'). For ID Cards (TD1/TD2), return the first character (usually 'I'). No other characters should be present.
-    *   **Document Number:** This field is mandatory. If you cannot extract a valid Document Number, you must fail the entire process. Do not return an empty string for this field.
+    *   **Document Number:** This field is mandatory. If you cannot extract a valid Document Number from the MRZ, you must fail the entire process. Do not return an empty string for this field.
     *   **Names:** Replace filler '<' characters with a single space. 'DOE<JOHN' becomes surname: 'DOE', givenName: 'JOHN'. 'SMITH<<JOHN<PAUL' becomes surname: 'SMITH', givenName: 'JOHN PAUL'.
     *   **Sex:** Must be 'M', 'F', or '<'. No other characters are valid.
     *   **Empty fields:** If a field is entirely composed of filler characters (e.g., '<<<<<<<<<<'), return an empty string for it, except for the Document Number.
     *   Return all other fields exactly as they are read from their designated positions, excluding checksum digits.
 
-Process the MRZ from the following document.
+Process the MRZ and the visual part of the document from the following image.
 {{media url=photoDataUri}}
 `,
     });

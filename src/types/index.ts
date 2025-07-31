@@ -11,7 +11,10 @@ export interface MrzData {
   sex: string;
   expiryDate: string;
   personalNumber: string;
-  [key: string]: string;
+  dateOfIssue?: string;
+  placeOfBirth?: string;
+  authority?: string;
+  [key: string]: string | undefined;
 }
 
 export interface ScanResult {
