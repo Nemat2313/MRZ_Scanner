@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -73,6 +72,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                 <TableHead>{t('surname')}</TableHead>
                 <TableHead>{t('givenName')}</TableHead>
                 <TableHead>{t('documentNumber')}</TableHead>
+                <TableHead>{t('personalNumber')}</TableHead>
                 <TableHead>{t('nationality')}</TableHead>
                 <TableHead>{t('dateOfBirth')}</TableHead>
                 <TableHead>{t('expiryDate')}</TableHead>
@@ -91,6 +91,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                       <TableCell>{result.mrzData?.surname}</TableCell>
                       <TableCell>{result.mrzData?.givenName}</TableCell>
                       <TableCell>{result.mrzData?.documentNumber}</TableCell>
+                      <TableCell>{result.mrzData?.personalNumber}</TableCell>
                       <TableCell>{result.mrzData?.nationality}</TableCell>
                       <TableCell>{result.mrzData?.dateOfBirth}</TableCell>
                       <TableCell>{result.mrzData?.expiryDate}</TableCell>
@@ -110,22 +111,13 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                     </TableRow>
                     <AccordionContent asChild>
                        <tr className="bg-muted/50 hover:bg-muted/50">
-                          <TableCell colSpan={9} className="p-4">
+                          <TableCell colSpan={10} className="p-4">
                               {result.status === 'error' && (
                                 <p className="text-destructive">{result.error}</p>
                               )}
                               {(result.status === 'success' || result.status === 'processing') && (
-                                <div>
-                                  <h4 className="mb-2 font-semibold">{t('originalImage')}</h4>
-                                  {result.originalImage ? (
-                                    <Image
-                                      src={result.originalImage}
-                                      alt="Original Scan"
-                                      width={400}
-                                      height={250}
-                                      className="rounded-lg border object-contain bg-white"
-                                    />
-                                  ) : <div className="h-[250px] w-[400px] bg-gray-200 rounded-lg flex items-center justify-center"><Loader2 className="animate-spin"/></div>}
+                                <div className="text-sm text-muted-foreground">
+                                  {t('scanDetailsFor')} {result.fileName}
                                 </div>
                               )}
                           </TableCell>

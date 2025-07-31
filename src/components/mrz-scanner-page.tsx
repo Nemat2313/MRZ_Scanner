@@ -39,7 +39,7 @@ const Header = () => {
              />
              <path 
                 fill="hsl(var(--accent))"
-                d="M168,88H132.3a28,28,0,0,0-52.6,0H88a8,8,0,0,0,0,16h4v48a8,8,0,0,0,16,0V104h32v48a8,8,0,0,0,16,0V104h4a8,8,0,0,0,0-16Z"
+                d="M168,88H132.3a28,28,0,0,0-52.6,0H88a8,8,0,0,0,0,16h4v48a8,8,0,0,0,16,0V104h32v48a8,8,0,0,0,16,0V104h4a8,8,0,0,0,0,16Z"
             />
           </svg>
           <h1 className="text-xl font-bold tracking-tight">Plain2Do</h1>
@@ -222,7 +222,8 @@ const MrzScannerCore = () => {
     setIsProcessing(false);
   };
 
-  const getHeaders = (): Record<keyof MrzData, string> => ({
+  const getHeaders = (): Record<string, string> => ({
+    fileName: t('fileName'),
     documentType: t('documentType'),
     issuingCountry: t('issuingCountry'),
     surname: t('surname'),

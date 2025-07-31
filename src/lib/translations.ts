@@ -36,6 +36,7 @@ export const translations: Record<Language, Record<string, string>> = {
     successful: 'Successful',
     failed: 'Failed',
     processingProgress: 'Processing...',
+    scanDetailsFor: 'Scan details for',
   },
   tr: {
     appName: 'MRZ Tarayıcı',
@@ -72,6 +73,7 @@ export const translations: Record<Language, Record<string, string>> = {
     successful: 'Başarılı',
     failed: 'Başarısız',
     processingProgress: 'İşleniyor...',
+    scanDetailsFor: 'Tarama detayları:',
   },
   ru: {
     appName: 'Сканер МРЗ',
@@ -108,5 +110,6 @@ export const translations: Record<Language, Record<string, string>> = {
     successful: 'Успешно',
     failed: 'Неудачно',
     processingProgress: 'Обработка...',
+    scanDetailsFor: 'Детали сканирования для',
   },
 };

@@ -7,17 +7,25 @@ function getSuccessfulScans(data: ScanResult[]) {
 
 function createDataArray(
   scans: ScanResult[],
-  headers: Record<keyof MrzData, string>
+  headers: Record<string, string>
 ) {
-  const headerKeys = Object.keys(headers) as (keyof MrzData)[];
+  const headerKeys = Object.keys(headers);
   const headerValues = Object.values(headers);
 
   const dataArray = [headerValues];
 
   scans.forEach((scan) => {
-    const mrz = scan.mrzData!;
-    const row = headerKeys.map((key) => mrz[key] || '');
-    dataArray.push(row);
+    const rowData: (string | number)[] = [];
+    headerKeys.forEach(key => {
+      if (key === 'fileName') {
+        rowData.push(scan.fileName);
+      } else if (scan.mrzData && key in scan.mrzData) {
+        rowData.push(scan.mrzData[key as keyof MrzData] || '');
+      } else {
+        rowData.push('');
+      }
+    });
+    dataArray.push(rowData);
   });
 
   return dataArray;
@@ -26,7 +34,7 @@ function createDataArray(
 
 export function exportToCsv(
   data: ScanResult[],
-  headers: Record<keyof MrzData, string>
+  headers: Record<string, string>
 ) {
   const successfulScans = getSuccessfulScans(data);
   if (successfulScans.length === 0) return;
@@ -50,7 +58,7 @@ export function exportToCsv(
 
 export function exportToXlsx(
   data: ScanResult[],
-  headers: Record<keyof MrzData, string>
+  headers: Record<string, string>
 ) {
   const successfulScans = getSuccessfulScans(data);
   if (successfulScans.length === 0) return;
