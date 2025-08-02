@@ -13,8 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Download, Trash2, CheckCircle, AlertTriangle, Loader2, BookUser } from 'lucide-react';
 import { LanguageSwitcher } from './language-switcher';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -172,7 +170,6 @@ const Overview = ({ results, isProcessing }: { results: ScanResult[], isProcessi
 const MrzScannerCore = () => {
   const [results, setResults] = useState<ScanResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [consentGiven, setConsentGiven] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -290,14 +287,7 @@ const MrzScannerCore = () => {
           <FileUploader
             onFilesAccepted={handleFiles}
             isProcessing={isProcessing}
-            isDisabled={!consentGiven}
           />
-          <div className="flex items-center space-x-2">
-            <Checkbox id="consent" onCheckedChange={(checked) => setConsentGiven(checked as boolean)} />
-            <Label htmlFor="consent" className="text-sm text-muted-foreground max-w-xl">
-              {t('dataProcessingConsent')}
-            </Label>
-          </div>
            <div className="w-full max-w-7xl">
             <Overview results={results} isProcessing={isProcessing} />
            </div>

@@ -8,10 +8,9 @@ import { useLanguage } from '@/contexts/language-context';
 interface FileUploaderProps {
   onFilesAccepted: (files: File[]) => void;
   isProcessing: boolean;
-  isDisabled: boolean;
 }
 
-export function FileUploader({ onFilesAccepted, isProcessing, isDisabled }: FileUploaderProps) {
+export function FileUploader({ onFilesAccepted, isProcessing }: FileUploaderProps) {
   const { t } = useLanguage();
   const [isDragActive, setIsDragActive] = useState(false);
 
@@ -32,7 +31,7 @@ export function FileUploader({ onFilesAccepted, isProcessing, isDisabled }: File
       'image/jpeg': ['.jpg', '.jpeg'],
       'application/pdf': ['.pdf'],
     },
-    disabled: isProcessing || isDisabled,
+    disabled: isProcessing,
     onDragEnter: () => setIsDragActive(true),
     onDragLeave: () => setIsDragActive(false),
   });
@@ -42,7 +41,7 @@ export function FileUploader({ onFilesAccepted, isProcessing, isDisabled }: File
       {...getRootProps()}
       className={`w-full max-w-2xl rounded-xl border-2 border-dashed p-8 text-center transition-all duration-300
       ${
-        isProcessing || isDisabled
+        isProcessing
           ? 'cursor-not-allowed border-muted bg-muted/50'
           : isDragActive
           ? 'border-primary bg-primary/10'
@@ -53,13 +52,12 @@ export function FileUploader({ onFilesAccepted, isProcessing, isDisabled }: File
       <div className="flex flex-col items-center justify-center gap-4">
         <UploadCloud
           className={`h-16 w-16 transition-colors ${
-            isDisabled ? 'text-muted-foreground/50' : 
+            isProcessing ? 'text-muted-foreground/50' : 
             isDragActive ? 'text-primary' : 'text-muted-foreground'
           }`}
         />
         <h3 className="text-2xl font-bold">{t('uploadTitle')}</h3>
         <p className="text-muted-foreground">{t('uploadSubtitle')}</p>
-        {isDisabled && <p className="text-sm font-semibold text-destructive">{t('consentRequired')}</p>}
       </div>
     </div>
   );

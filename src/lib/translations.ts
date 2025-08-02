@@ -43,8 +43,6 @@ export const translations: Record<Language, Record<string, string>> = {
     placeOfBirth: 'Place of Birth',
     authority: 'Authority',
     dataManagement: 'Data Management',
-    dataProcessingConsent: 'I acknowledge and agree that the data from the uploaded documents will be sent to Google AI services, which may be located outside the Russian Federation, for processing. I understand that this is necessary to extract the document information.',
-    consentRequired: 'Please provide consent to enable file upload.',
   },
   tr: {
     appName: 'Belge Verisi Çıkarıcı',
@@ -88,8 +86,6 @@ export const translations: Record<Language, Record<string, string>> = {
     placeOfBirth: 'Doğum Yeri',
     authority: 'Makam',
     dataManagement: 'Veri Yönetimi',
-    dataProcessingConsent: 'Yüklenen belgelerdeki verilerin, belge bilgilerini çıkarmak amacıyla Rusya Federasyonu dışında olabilecek Google AI hizmetlerine gönderileceğini anlıyor ve kabul ediyorum.',
-    consentRequired: 'Dosya yüklemeyi etkinleştirmek için lütfen onay verin.',
   },
   ru: {
     appName: 'Извлечение данных из документов',
@@ -133,7 +129,5 @@ export const translations: Record<Language, Record<string, string>> = {
     placeOfBirth: 'Место рождения',
     authority: 'Орган выдачи',
     dataManagement: 'Управление данными',
-    dataProcessingConsent: 'Я подтверждаю и соглашаюсь с тем, что данные из загруженных документов будут отправлены для обработки в сервисы Google AI, которые могут находиться за пределами Российской Федерации. Я понимаю, что это необходимо для извлечения информации из документов.',
-    consentRequired: 'Пожалуйста, дайте свое согласие, чтобы включить загрузку файлов.',
   },
 };
