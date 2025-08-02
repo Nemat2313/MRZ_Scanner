@@ -81,7 +81,7 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
             </TableHeader>
             <TableBody>
               {results.map((result) => (
-                <TableRow key={result.id} className="font-mono text-sm">
+                <TableRow key={result.id} className="font-mono text-sm whitespace-nowrap">
                   <TableCell>
                     <StatusIcon status={result.status} />
                   </TableCell>
