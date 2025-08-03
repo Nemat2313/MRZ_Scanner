@@ -1,123 +1,87 @@
 'use server';
 
 /**
- * @fileOverview Extracts MRZ data from a document image.
+ * @fileOverview Extracts MRZ data from a document image using GigaChat.
  *
  * - extractMrz - A function that extracts Machine-Readable Zone (MRZ) data from an image.
  * - ExtractMrzInput - The input type for the extractMrz function.
  * - MrzData - The return type for the extractMrz function, which is also defined in `src/types`.
  */
+import { GigaChat } from '@/services/gigachat';
+import type { MrzData as MrzDataType } from '@/types';
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import { MrzData as MrzDataType } from '@/types';
+export interface ExtractMrzInput {
+  photoDataUri: string;
+}
 
-const ExtractMrzInputSchema = z.object({
-  photoDataUri: z
-    .string()
-    .describe(
-      "A photo of a document containing an MRZ, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
-    ),
-});
-export type ExtractMrzInput = z.infer<typeof ExtractMrzInputSchema>;
+const gigaChat = new GigaChat();
 
-const MrzDataSchema = z.object({
-  documentType: z.string().describe('The type of the document (e.g., P for Passport, I for ID Card).'),
-  issuingCountry: z.string().describe('The three-letter code of the issuing country.'),
-  surname: z.string().describe("The surname of the holder."),
-  givenName: z.string().describe("The given name(s) of the holder."),
-  documentNumber: z.string().describe('The passport or document number. MUST NOT BE EMPTY.'),
-  nationality: z.string().describe('The three-letter code of the holder\'s nationality.'),
-  dateOfBirth: z.string().describe("The holder's date of birth in YYMMDD format."),
-  sex: z.string().describe('The sex of the holder (M, F, or < for non-specified).'),
-  expiryDate: z.string().describe('The expiry date of the document in YYMMDD format.'),
-  personalNumber: z.string().describe('The personal number or other optional data. Can be an empty string.'),
-  dateOfIssue: z.string().optional().describe("The date of issue of the document. Can be an empty string if not found."),
-  placeOfBirth: z.string().optional().describe("The place of birth of the holder. Can be an empty string if not found."),
-  authority: z.string().optional().describe("The issuing authority of the document. Can be an empty string if not found."),
-});
+function cleanJsonString(jsonString: string): string {
+    // Remove ```json markdown and any trailing ```
+    return jsonString.replace(/^```json\s*|```$/g, '');
+}
 
-// Re-exporting the Zod schema's inferred type to align with the manually defined type
-export type MrzData = z.infer<typeof MrzDataSchema>;
+function parseGigaChatResponse(responseText: string): MrzDataType {
+    const cleanedResponse = cleanJsonString(responseText.trim());
+    try {
+        const parsed = JSON.parse(cleanedResponse);
+        // Ensure all fields are strings and handle optional fields
+        return {
+            documentType: parsed.documentType || '',
+            issuingCountry: parsed.issuingCountry || '',
+            surname: parsed.surname || '',
+            givenName: parsed.givenName || '',
+            documentNumber: parsed.documentNumber || '',
+            nationality: parsed.nationality || '',
+            dateOfBirth: parsed.dateOfBirth || '',
+            sex: parsed.sex || '',
+            expiryDate: parsed.expiryDate || '',
+            personalNumber: parsed.personalNumber || '',
+            dateOfIssue: parsed.dateOfIssue || undefined,
+            placeOfBirth: parsed.placeOfBirth || undefined,
+            authority: parsed.authority || undefined,
+        };
+    } catch (error) {
+        console.error("Failed to parse GigaChat JSON response:", error);
+        console.error("Original response text:", cleanedResponse);
+        throw new Error("Could not parse the structured data from the AI response.");
+    }
+}
 
-const extractMrzFlow = ai.defineFlow(
-  {
-    name: 'extractMrzFlow',
-    inputSchema: ExtractMrzInputSchema,
-    outputSchema: MrzDataSchema,
-  },
-  async input => {
-    const prompt = ai.definePrompt({
-      name: 'extractMrzPrompt',
-      input: { schema: ExtractMrzInputSchema },
-      output: { schema: MrzDataSchema },
-      prompt: `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) and visually inspecting government-issued identity documents. Your task is to extract information with maximum accuracy.
+
+export async function extractMrz(input: ExtractMrzInput): Promise<MrzDataType> {
+    const { photoDataUri } = input;
+    const base64Image = photoDataUri.split(',')[1];
+    
+    // This prompt is specifically tailored for GigaChat
+    const prompt = `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) and visually inspecting government-issued identity documents. Your task is to extract information with maximum accuracy and return it as a JSON object.
 
 First, process the MRZ data according to the critical instructions below.
-Second, visually inspect the rest of the document image (outside of the MRZ) to find the 'Date of Issue', 'Place of Birth', and 'Authority' fields. If these fields are not found, return them as empty strings.
+Second, visually inspect the rest of the document image (outside of the MRZ) to find the 'dateOfIssue', 'placeOfBirth', and 'authority' fields. If these fields are not found, return them as empty strings.
 
 If the provided document has multiple pages (e.g., a PDF), first locate the single page that contains the Machine-Readable Zone (MRZ) at the bottom. All subsequent parsing must be performed ONLY on that specific page.
 
 CRITICAL INSTRUCTIONS (MRZ Parsing):
 1.  **Character Accuracy:** Be extremely careful about common OCR errors. 'O' is a letter, '0' is a digit. 'I' is a letter, '1' is a digit. '<' is a filler character. Double-check every character.
-
-2.  **Field Parsing by Format:**
-
-    *   **TD3 Format (Passports - 2 lines, 44 chars each):**
-        *   **Line 1:**
-            *   Chars 1-2: Document Type. The first character is 'P' (for Passport). The second character is often '<'.
-            *   Chars 3-5: Issuing Country (e.g., 'UTO').
-            *   Chars 6-44: Surname and Given Names, separated by '<<'. Example: 'SURNAME<<GIVEN<NAMES<<<<'.
-        *   **Line 2:**
-            *   Chars 1-9: Document Number.
-            *   Char 10: Checksum digit (ignore).
-            *   Chars 11-13: Nationality.
-            *   Chars 14-19: Date of Birth (YYMMDD).
-            *   Char 20: Checksum digit (ignore).
-            *   Char 21: Sex (M/F/<).
-            *   Chars 22-27: Expiry Date (YYMMDD).
-            *   Char 28: Checksum digit (ignore).
-            *   Chars 29-42: Personal Number or optional data.
-            *   Char 43: Checksum digit (ignore).
-            *   Char 44: Final checksum (ignore).
-
-    *   **TD1/TD2 Format (ID Cards - often 3 lines):**
-        *   **Line 1 (TD1 example):**
-            *   Chars 1-2: Document Type. The first character is 'I'. The second character can vary (e.g., 'D', 'V', '<').
-            *   Chars 3-5: Issuing Country.
-            *   Chars 6-14: Document Number.
-            *   ... other fields
-        *   **Examine all lines to correctly identify all fields based on standard MRZ formats.** For TD1/TD2, the Expiry Date and Personal Number might be on the second or third line. You must find them and parse them correctly, not mixing them with other fields.
-
+2.  **Field Parsing by Format:** Parse fields based on standard TD1, TD2, or TD3 MRZ formats.
 3.  **Country-Specific Rules:**
     *   **Uzbekistan (UZB):** 
         *   The \`personalNumber\` is a 14-digit number. Ensure you extract exactly 14 digits for this field if the issuing country is UZB.
-        *   The surname might incorrectly include "UZB" at the beginning (e.g., "UZBERGASHOV"). If the issuing country is UZB and the surname starts with "UZB", remove this prefix from the surname field. For example, "UZBERGASHOV" should become "ERGASHOV".
-
+        *   If the issuing country is UZB and the surname starts with "UZB" (e.g., "UZBERGASHOV"), remove this prefix. "UZBERGASHOV" should become "ERGASHOV".
 4.  **Output Formatting Rules:**
-    *   **Document Type:** For Passports (TD3), return the first character (usually 'P'). For ID Cards (TD1/TD2), return the first character (usually 'I'). No other characters should be present.
-    *   **Document Number:** This field is mandatory. If you cannot extract a valid Document Number from the MRZ, you must fail the entire process. Do not return an empty string for this field.
-    *   **Names:** Replace filler '<' characters with a single space. 'DOE<JOHN' becomes surname: 'DOE', givenName: 'JOHN'. 'SMITH<<JOHN<PAUL' becomes surname: 'SMITH', givenName: 'JOHN PAUL'.
-    *   **Sex:** Must be 'M', 'F', or '<'. No other characters are valid.
-    *   **Empty fields:** If a field is entirely composed of filler characters (e.g., '<<<<<<<<<<'), return an empty string for it, except for the Document Number.
+    *   **Names:** Replace filler '<' characters with a single space.
+    *   **Document Number:** This field is mandatory. If you cannot extract a valid Document Number, the entire process fails.
+    *   **Empty fields:** If a field is entirely composed of filler characters ('<<<<<<<<<<'), return an empty string for it.
     *   Return all other fields exactly as they are read from their designated positions, excluding checksum digits.
 
-Process the MRZ and the visual part of the document from the following image.
-{{media url=photoDataUri}}
-`,
-    });
+Process the document and respond ONLY with a valid JSON object with the following keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Do not include any explanatory text before or after the JSON object.`;
 
-    const { output } = await prompt(input);
-    if (!output || !output.documentNumber) {
-      throw new Error('Failed to extract a valid Document Number from the MRZ.');
+    const response = await gigaChat.getChatCompletion(prompt, base64Image);
+    const mrzData = parseGigaChatResponse(response);
+
+    if (!mrzData.documentNumber) {
+        throw new Error('Failed to extract a valid Document Number from the MRZ.');
     }
-    return output;
-  }
-);
 
-
-export async function extractMrz(input: ExtractMrzInput): Promise<MrzDataType> {
-  const result = await extractMrzFlow(input);
-  // The flow already returns the correct structure, we just need to satisfy TypeScript's type from /types
-  return result as MrzDataType;
+    return mrzData;
 }
