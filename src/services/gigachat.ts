@@ -78,7 +78,7 @@ export class GigaChat {
           ],
         },
       ],
-      temperature: 0.7,
+      temperature: 0.1,
       // We are asking for a JSON response so we don't need too many tokens
       max_tokens: 1024,
     };
@@ -101,10 +101,11 @@ export class GigaChat {
     }
 
     const responseData = await response.json();
-    if (responseData.choices && responseData.choices.length > 0) {
+    if (responseData.choices && responseData.choices.length > 0 && responseData.choices[0].message.content) {
         return responseData.choices[0].message.content;
     }
-
-    throw new Error('No response choices from GigaChat.');
+    
+    console.error('Invalid response structure from GigaChat:', responseData);
+    throw new Error('No valid response choice from GigaChat.');
   }
 }
