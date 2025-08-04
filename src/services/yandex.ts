@@ -1,8 +1,22 @@
 // @/services/yandex.ts
+
+// Helper function to convert data URI to Blob
+function dataURItoBlob(dataURI: string): Blob {
+    const byteString = atob(dataURI.split(',')[1]);
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+}
+
+
 export class YandexGPT {
   private apiKey: string;
   private folderId: string;
-  private readonly CHAT_URL = 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion';
+  private readonly COMPLETION_URL = 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion';
 
   constructor() {
     this.apiKey = process.env.YANDEX_API_KEY!;
@@ -13,8 +27,11 @@ export class YandexGPT {
     }
   }
 
-  public async getChatCompletion(prompt: string, imageBase64: string): Promise<string> {
-    const body = {
+  public async getChatCompletion(prompt: string, dataUri: string): Promise<string> {
+    const imageBlob = dataURItoBlob(dataUri);
+    
+    const formData = new FormData();
+    const requestBody = {
       modelUri: `gpt://${this.folderId}/yandexgpt/latest`,
       completionOptions: {
         stream: false,
@@ -32,7 +49,7 @@ export class YandexGPT {
             {
               type: 'image_url',
               image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`
+                url: `data:${imageBlob.type};base64,${Buffer.from(await imageBlob.arrayBuffer()).toString('base64')}`
               }
             }
           ]
@@ -40,16 +57,16 @@ export class YandexGPT {
       ],
     };
 
-    const response = await fetch(this.CHAT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Api-Key ${this.apiKey}`,
-        // Note: x-folder-id is not required when using modelUri with folderId
-      },
-      body: JSON.stringify(body),
-      cache: 'no-store',
+    const response = await fetch(this.COMPLETION_URL, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Api-Key ${this.apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        cache: 'no-store',
     });
+
 
     if (!response.ok) {
         const errorBody = await response.text();
@@ -83,7 +100,7 @@ export class YandexGPT {
       ],
     };
 
-    const response = await fetch(this.CHAT_URL, {
+    const response = await fetch(this.COMPLETION_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

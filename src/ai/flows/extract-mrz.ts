@@ -50,7 +50,6 @@ function parseYandexGPTResponse(responseText: string): MrzDataType {
 
 export async function extractMrz(input: ExtractMrzInput): Promise<MrzDataType> {
     const { photoDataUri } = input;
-    const base64Image = photoDataUri.split(',')[1];
     
     const prompt = `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) and visually inspecting government-issued identity documents. Your task is to extract information with maximum accuracy and return it as a JSON object.
 
@@ -74,7 +73,7 @@ CRITICAL INSTRUCTIONS (MRZ Parsing):
 
 Process the document and respond ONLY with a valid JSON object with the following keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Do not include any explanatory text before or after the JSON object.`;
 
-    const response = await yandexGpt.getChatCompletion(prompt, base64Image);
+    const response = await yandexGpt.getChatCompletion(prompt, photoDataUri);
     const mrzData = parseYandexGPTResponse(response);
 
     if (!mrzData.documentNumber) {
