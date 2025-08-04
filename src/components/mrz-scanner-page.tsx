@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { Language, MrzData, ScanResult } from '@/types';
-import { extractMrzAction } from '@/app/actions';
+import { extractMrzAction, askYandexAction } from '@/app/actions';
 import { exportToCsv, exportToXlsx } from '@/lib/export';
 import { LanguageProvider, useLanguage } from '@/contexts/language-context';
 import { FileUploader } from './file-uploader';
@@ -166,6 +166,43 @@ const Overview = ({ results, isProcessing }: { results: ScanResult[], isProcessi
   )
 }
 
+const YandexTest = () => {
+  const [response, setResponse] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleTest = async () => {
+    setIsLoading(true);
+    setResponse('');
+    const result = await askYandexAction("Rusya nufuzu 2024 yili kac kisi isi?");
+    if(result.success) {
+      setResponse(result.data);
+    } else {
+      setResponse(`Error: ${result.error}`);
+    }
+    setIsLoading(false);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>YandexGPT Connection Test</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Button onClick={handleTest} disabled={isLoading}>
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Ask Yandex a Question
+        </Button>
+        {response && (
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">Response:</p>
+            <p className="font-mono">{response}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 
 const MrzScannerCore = () => {
   const [results, setResults] = useState<ScanResult[]>([]);
@@ -288,6 +325,9 @@ const MrzScannerCore = () => {
             onFilesAccepted={handleFiles}
             isProcessing={isProcessing}
           />
+           <div className="w-full max-w-7xl">
+            <YandexTest />
+           </div>
            <div className="w-full max-w-7xl">
             <Overview results={results} isProcessing={isProcessing} />
            </div>

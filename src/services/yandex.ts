@@ -25,7 +25,61 @@ export class YandexGPT {
       messages: [
         {
           role: 'user',
-          content: `Image: data:image/jpeg;base64,${imageBase64}\n\nPrompt: ${prompt}`,
+          content: [
+            {
+              type: 'text',
+              text: prompt,
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`
+              }
+            }
+          ]
+        },
+      ],
+    };
+
+    const response = await fetch(this.CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Api-Key ${this.apiKey}`,
+        'x-folder-id': this.folderId,
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('YandexGPT API Error:', response.status, response.statusText, errorBody);
+        throw new Error(`YandexGPT API request failed. Status: ${response.status}. Body: ${errorBody}`);
+    }
+
+    const responseData = await response.json();
+    
+    if (responseData.result && responseData.result.alternatives && responseData.result.alternatives.length > 0 && responseData.result.alternatives[0].message.text) {
+        return responseData.result.alternatives[0].message.text;
+    }
+    
+    console.error('Invalid response structure from YandexGPT:', responseData);
+    throw new Error('No valid response choice from YandexGPT.');
+  }
+
+   public async getTextCompletion(prompt: string): Promise<string> {
+    const body = {
+      modelUri: `gpt://${this.folderId}/yandexgpt-lite/latest`,
+      completionOptions: {
+        stream: false,
+        temperature: 0.6,
+        maxTokens: '2000',
+      },
+      messages: [
+        {
+          role: 'user',
+          text: prompt,
         },
       ],
     };
@@ -41,18 +95,18 @@ export class YandexGPT {
     });
 
     if (!response.ok) {
-        const errorBody = await response.text();
-        console.error('YandexGPT API Error:', response.status, response.statusText, errorBody);
-        throw new Error('YandexGPT API request failed.');
+      const errorBody = await response.text();
+      console.error('YandexGPT Text API Error:', response.status, response.statusText, errorBody);
+      throw new Error(`YandexGPT API request failed. Status: ${response.status}. Body: ${errorBody}`);
     }
 
     const responseData = await response.json();
-    
-    if (responseData.result && responseData.result.alternatives && responseData.result.alternatives.length > 0 && responseData.result.alternatives[0].message.text) {
-        return responseData.result.alternatives[0].message.text;
+
+    if (responseData.result?.alternatives?.[0]?.message?.text) {
+      return responseData.result.alternatives[0].message.text;
     }
-    
-    console.error('Invalid response structure from YandexGPT:', responseData);
-    throw new Error('No valid response choice from YandexGPT.');
+
+    console.error('Invalid text response structure from YandexGPT:', responseData);
+    throw new Error('No valid text response choice from YandexGPT.');
   }
 }
