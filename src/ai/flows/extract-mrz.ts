@@ -51,27 +51,7 @@ function parseYandexGPTResponse(responseText: string): MrzDataType {
 export async function extractMrz(input: ExtractMrzInput): Promise<MrzDataType> {
     const { photoDataUri } = input;
     
-    const prompt = `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) and visually inspecting government-issued identity documents. Your task is to extract information with maximum accuracy and return it as a JSON object.
-
-First, process the MRZ data according to the critical instructions below.
-Second, visually inspect the rest of the document image (outside of the MRZ) to find the 'dateOfIssue', 'placeOfBirth', and 'authority' fields. If these fields are not found, return them as empty strings.
-
-If the provided document has multiple pages (e.g., a PDF), first locate the single page that contains the Machine-Readable Zone (MRZ) at the bottom. All subsequent parsing must be performed ONLY on that specific page.
-
-CRITICAL INSTRUCTIONS (MRZ Parsing):
-1.  **Character Accuracy:** Be extremely careful about common OCR errors. 'O' is a letter, '0' is a digit. 'I' is a letter, '1' is a digit. '<' is a filler character. Double-check every character.
-2.  **Field Parsing by Format:** Parse fields based on standard TD1, TD2, or TD3 MRZ formats.
-3.  **Country-Specific Rules:**
-    *   **Uzbekistan (UZB):** 
-        *   The \`personalNumber\` is a 14-digit number. Ensure you extract exactly 14 digits for this field if the issuing country is UZB.
-        *   If the issuing country is UZB and the surname starts with "UZB" (e.g., "UZBERGASHOV"), remove this prefix. "UZBERGASHOV" should become "ERGASHOV".
-4.  **Output Formatting Rules:**
-    *   **Names:** Replace filler '<' characters with a single space.
-    *   **Document Number:** This field is mandatory. If you cannot extract a valid Document Number, the entire process fails.
-    *   **Empty fields:** If a field is entirely composed of filler characters ('<<<<<<<<<<'), return an empty string for it.
-    *   Return all other fields exactly as they are read from their designated positions, excluding checksum digits.
-
-Process the document and respond ONLY with a valid JSON object with the following keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Do not include any explanatory text before or after the JSON object.`;
+    const prompt = `Analyze the provided document image. Extract all data from the Machine-Readable Zone (MRZ). Also find 'dateOfIssue', 'placeOfBirth', and 'authority' from the visual part of the document. Return ONLY a valid JSON object with the keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Handle Uzbekistan-specific rules: 'personalNumber' must be 14 digits, and remove 'UZB' prefix from surnames.`;
 
     const response = await yandexGpt.getChatCompletion(prompt, photoDataUri);
     const mrzData = parseYandexGPTResponse(response);
