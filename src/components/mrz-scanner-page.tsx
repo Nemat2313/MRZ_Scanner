@@ -19,6 +19,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Textarea } from './ui/textarea';
+import { Label } from './ui/label';
 
 const Header = () => {
   const { t } = useLanguage();
@@ -167,41 +169,54 @@ const Overview = ({ results, isProcessing }: { results: ScanResult[], isProcessi
 }
 
 const YandexTest = () => {
+  const { t } = useLanguage();
+  const [prompt, setPrompt] = useState('Rusya nufuzu 2024 yili kac kisi isi?');
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleTest = async () => {
+    if (!prompt) return;
     setIsLoading(true);
     setResponse('');
-    const result = await askYandexAction("Rusya nufuzu 2024 yili kac kisi isi?");
-    if(result.success) {
+    const result = await askYandexAction(prompt);
+    if (result.success) {
       setResponse(result.data);
     } else {
       setResponse(`Error: ${result.error}`);
     }
     setIsLoading(false);
-  }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>YandexGPT Connection Test</CardTitle>
+        <CardTitle>{t('yandexTestTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Button onClick={handleTest} disabled={isLoading}>
+        <div className="space-y-2">
+          <Label htmlFor="yandex-prompt">{t('yandexTestLabel')}</Label>
+          <Textarea
+            id="yandex-prompt"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder={t('yandexTestPlaceholder')}
+            className="min-h-[100px]"
+          />
+        </div>
+        <Button onClick={handleTest} disabled={isLoading || !prompt}>
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Ask Yandex a Question
+          {t('yandexTestButton')}
         </Button>
         {response && (
-          <div className="p-4 bg-muted/50 rounded-lg">
-            <p className="text-sm text-muted-foreground">Response:</p>
-            <p className="font-mono">{response}</p>
+          <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+            <h4 className="font-semibold">{t('yandexTestResponseTitle')}</h4>
+            <p className="font-mono whitespace-pre-wrap">{response}</p>
           </div>
         )}
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
 
 const MrzScannerCore = () => {
