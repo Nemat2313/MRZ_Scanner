@@ -341,9 +341,6 @@ const MrzScannerCore = () => {
             isProcessing={isProcessing}
           />
            <div className="w-full max-w-7xl">
-            <YandexTest />
-           </div>
-           <div className="w-full max-w-7xl">
             <Overview results={results} isProcessing={isProcessing} />
            </div>
         </section>
@@ -381,6 +378,11 @@ const MrzScannerCore = () => {
             <ResultsDisplay results={results} />
           </div>
         </section>
+
+        <section className="w-full max-w-7xl mx-auto">
+          <YandexTest />
+        </section>
+
       </main>
       <footer className="py-4">
         <div className="container mx-auto text-center text-base text-muted-foreground">
