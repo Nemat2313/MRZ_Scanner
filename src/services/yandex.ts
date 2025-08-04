@@ -45,7 +45,7 @@ export class YandexGPT {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Api-Key ${this.apiKey}`,
-        'x-folder-id': this.folderId,
+        // Note: x-folder-id is not required when using modelUri with folderId
       },
       body: JSON.stringify(body),
       cache: 'no-store',
