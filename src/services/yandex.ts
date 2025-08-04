@@ -35,7 +35,6 @@ export class YandexGPT {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Api-Key ${this.apiKey}`,
-        'x-folder-id': this.folderId,
       },
       body: JSON.stringify(body),
       cache: 'no-store',
