@@ -1,18 +1,5 @@
 // @/services/yandex.ts
 
-// Helper function to convert data URI to Blob
-function dataURItoBlob(dataURI: string): Blob {
-    const byteString = atob(dataURI.split(',')[1]);
-    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mimeString });
-}
-
-
 export class YandexGPT {
   private apiKey: string;
   private folderId: string;
@@ -27,18 +14,21 @@ export class YandexGPT {
     }
   }
 
-  public async getChatCompletion(prompt: string, dataUri: string): Promise<string> {
+  public async getChatCompletion(prompt: string, imageBase64: string): Promise<string> {
     
+    // This is the correct structure for multimodal requests according to Yandex documentation.
+    // The content is an array of objects, one for text and one for the image.
     const requestBody = {
       modelUri: `gpt://${this.folderId}/yandexgpt/latest`,
       completionOptions: {
         stream: false,
-        temperature: 0.1,
-        maxTokens: '1024',
+        temperature: 0.1, // Lower temperature for more deterministic output
+        maxTokens: '2048', // Increased tokens for complex documents
       },
       messages: [
         {
           role: 'user',
+          // The content itself is an array with text and image parts
           content: [
             {
               type: 'text',
@@ -47,7 +37,9 @@ export class YandexGPT {
             {
               type: 'image_url',
               image_url: {
-                url: dataUri,
+                // The URL is the base64-encoded image data itself, prefixed with the data URI scheme.
+                // It is crucial to send the full data URI.
+                url: `data:image/jpeg;base64,${imageBase64}`,
               }
             }
           ]
@@ -60,11 +52,12 @@ export class YandexGPT {
         headers: {
             'Authorization': `Api-Key ${this.apiKey}`,
             'Content-Type': 'application/json',
+            // The 'x-folder-id' header is deprecated but can be kept for compatibility.
+            // It is not the primary way of specifying the folder anymore.
         },
         body: JSON.stringify(requestBody),
         cache: 'no-store',
     });
-
 
     if (!response.ok) {
         const errorBody = await response.text();
@@ -74,7 +67,8 @@ export class YandexGPT {
 
     const responseData = await response.json();
     
-    if (responseData.result && responseData.result.alternatives && responseData.result.alternatives.length > 0 && responseData.result.alternatives[0].message.text) {
+    // Navigate through the correct response structure to get the text.
+    if (responseData.result?.alternatives?.[0]?.message?.text) {
         return responseData.result.alternatives[0].message.text;
     }
     
