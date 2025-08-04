@@ -1,4 +1,3 @@
-
 // @/services/yandex.ts
 export class YandexGPT {
   private apiKey: string;

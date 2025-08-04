@@ -27,9 +27,10 @@ export async function extractMrzAction(values: { photoDataUri: string }) {
     };
   } catch (error) {
     console.error('Error extracting MRZ:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return {
       success: false,
-      error: 'Failed to extract MRZ data. Please try again.',
+      error: `Failed to extract MRZ data. Details: ${errorMessage}`,
     };
   }
 }
