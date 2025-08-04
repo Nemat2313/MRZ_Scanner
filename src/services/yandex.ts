@@ -30,7 +30,6 @@ export class YandexGPT {
   public async getChatCompletion(prompt: string, dataUri: string): Promise<string> {
     const imageBlob = dataURItoBlob(dataUri);
     
-    const formData = new FormData();
     const requestBody = {
       modelUri: `gpt://${this.folderId}/yandexgpt/latest`,
       completionOptions: {
@@ -49,7 +48,7 @@ export class YandexGPT {
             {
               type: 'image_url',
               image_url: {
-                url: `data:${imageBlob.type};base64,${Buffer.from(await imageBlob.arrayBuffer()).toString('base64')}`
+                url: dataUri,
               }
             }
           ]
@@ -86,7 +85,7 @@ export class YandexGPT {
 
    public async getTextCompletion(prompt: string): Promise<string> {
     const body = {
-      modelUri: `gpt://${this.folderId}/yandexgpt-lite/latest`,
+      modelUri: `gpt://${this.folderId}/yandexgpt-lite`,
       completionOptions: {
         stream: false,
         temperature: 0.6,
@@ -105,6 +104,7 @@ export class YandexGPT {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Api-Key ${this.apiKey}`,
+        'x-folder-id': this.folderId,
       },
       body: JSON.stringify(body),
       cache: 'no-store',
