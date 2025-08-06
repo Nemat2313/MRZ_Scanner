@@ -2,14 +2,11 @@
 
 import {extractMrzData} from '@/ai/flows/extract-mrz';
 import {z} from 'zod';
-import type {ExtractMrzDataInput} from '@/ai/flows/extract-mrz';
-
-const extractActionSchema = z.object({
-  photoDataUri: z.string(),
-});
+import type {ExtractMrzDataInput} from '@/types/mrz';
+import {ExtractMrzDataInputSchema} from '@/types/mrz';
 
 export async function extractMrzDataAction(values: ExtractMrzDataInput) {
-  const validated = extractActionSchema.safeParse(values);
+  const validated = ExtractMrzDataInputSchema.safeParse(values);
   if (!validated.success) {
     return {
       success: false,
