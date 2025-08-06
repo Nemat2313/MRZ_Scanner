@@ -17,8 +17,15 @@ export interface ExtractMrzTextInput {
 const yandexGpt = new YandexGPT();
 
 function cleanJsonString(jsonString: string): string {
-    // Remove ```json markdown and any trailing ```
-    return jsonString.replace(/^```json\s*|```$/g, '');
+    // Remove ```json markdown and any other text before the first { and after the last }
+    const startIndex = jsonString.indexOf('{');
+    const endIndex = jsonString.lastIndexOf('}');
+
+    if (startIndex === -1 || endIndex === -1) {
+        return jsonString; // Return original if no JSON object is found
+    }
+
+    return jsonString.substring(startIndex, endIndex + 1);
 }
 
 function parseYandexGPTResponse(responseText: string): MrzDataType {
@@ -42,8 +49,9 @@ function parseYandexGPTResponse(responseText: string): MrzDataType {
             authority: parsed.authority || undefined,
         };
     } catch (error) {
-        console.error("Failed to parse YandexGPT JSON response:", error);
-        console.error("Original response text:", cleanedResponse);
+        console.error("Failed to parse YandexGPT JSON response.");
+        console.error("Original raw response text from YandexGPT:", responseText);
+        console.error("Cleaned response text before parsing:", cleanedResponse);
         throw new Error("Could not parse the structured data from the AI response.");
     }
 }
