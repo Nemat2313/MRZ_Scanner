@@ -59,30 +59,27 @@ function parseYandexGPTResponse(responseText: string): MrzDataType {
 export async function extractMrzFromText(input: ExtractMrzTextInput): Promise<MrzDataType> {
     const { ocrText } = input;
     
-    const prompt = `You are an expert at extracting passport information from OCR text that contains both the photo page data and MRZ (Machine Readable Zone) data.
+    const prompt = `You are an expert at extracting passport information from OCR text that contains both the photo page (Visual Inspection Zone - VIZ) and the MRZ (Machine Readable Zone). Your task is to analyze the provided OCR text, cross-reference information between the VIZ and MRZ for accuracy, and return a single, clean JSON object.
 
-Analyze the OCR text carefully. If the document has multiple pages, first locate the single page that contains the Machine-Readable Zone (MRZ) at the bottom. All subsequent parsing must be performed ONLY on that specific page's text.
-Then, extract the following fields and return them in a single JSON object.
+CRITICAL INSTRUCTIONS:
+1.  **Cross-Reference for Accuracy**: For fields that appear in BOTH the photo page and the MRZ (like surname, given names, document number, date of birth, etc.), compare the values from both zones. The value from the photo page (VIZ) is generally more complete and should be preferred, especially for names. Use the MRZ to validate, but the VIZ is the primary source for final presentation.
+2.  **Field-Specific Sourcing**:
+    *   **Fields to Cross-Reference**: 'documentType', 'issuingCountry', 'surname', 'givenName', 'documentNumber', 'nationality', 'dateOfBirth', 'sex', 'expiryDate', 'personalNumber'.
+    *   **Fields from Photo Page ONLY**: 'dateOfIssue', 'placeOfBirth', 'authority'. These do not exist in the MRZ.
+3.  **Extraction and Formatting Rules**:
+    *   **documentType**: Get from the first letter of the MRZ line 1.
+    *   **issuingCountry**: Get from the MRZ line 1, positions 3-5. Validate with the country name on the photo page.
+    *   **surname & givenName**: Extract from both VIZ and MRZ. The final value should be the full name as written on the photo page. Replace any '<' characters from the MRZ with a single space.
+    *   **documentNumber**: Extract from both VIZ and MRZ. Ensure they match.
+    *   **nationality**: Extract from the VIZ. Validate with the nationality code in the MRZ.
+    *   **dateOfBirth & expiryDate**: Extract from the MRZ. Validate with the dates on the photo page if available.
+    *   **sex**: Extract from the MRZ. Validate with the photo page if available.
+4.  **Output Format**:
+    *   Respond ONLY with a valid JSON object with the keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority".
+    *   Do not include any explanatory text, markdown, or code block syntax before or after the JSON object. Just the raw JSON.
+    *   If a field cannot be found in any zone, return it as an empty string "".
 
-1.  **documentType**: Extract from the first letter of the MRZ line 1 (usually 'P' for passport).
-2.  **issuingCountry**: Extract from MRZ line 1 after the document type.
-3.  **documentNumber**: Extract from MRZ line 2 (starts right after the line begins).
-4.  **surname**: Extract from MRZ line 1, after the country code, until the '<<'. Replace any '<' with a single space.
-5.  **givenName**: Extract from MRZ line 1, after the '<<' following surname, until the end of line. Replace any '<' with a single space.
-6.  **nationality**: Extract from the photo page text, not from the MRZ.
-7.  **dateOfBirth**: Extract from MRZ line 2 (positions 14–19).
-8.  **sex**: Extract from MRZ line 2 (position 21).
-9.  **dateOfIssue**: Extract from the photo page text, not from MRZ.
-10. **expiryDate**: Extract from MRZ line 2 (positions 22–27).
-11. **placeOfBirth**: Extract from the photo page text.
-12. **authority**: Extract from the photo page text.
-13. **personalNumber**: Extract from the MRZ if available.
-
-All text should be in uppercase (if Latin), with no unnecessary characters. Avoid guessing missing fields — leave blank or null if not visible or not clearly extractable.
-
-Respond ONLY with a valid JSON object with the keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Do not include any explanatory text, markdown, or code block syntax before or after the JSON object. Just the raw JSON.
-
-Here is the OCR text:
+Here is the OCR text to analyze:
 ---
 ${ocrText}
 ---
