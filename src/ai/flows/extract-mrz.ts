@@ -18,7 +18,9 @@ import {
  * @param input The input data containing the photo data URI.
  * @returns A promise that resolves to the extracted MRZ data.
  */
-export async function extractMrzData(input: ExtractMrzDataInput): Promise<MrzData> {
+export async function extractMrzData(
+  input: ExtractMrzDataInput
+): Promise<MrzData> {
   const {output} = await mrzExtractionFlow(input);
   if (!output) {
     throw new Error('Flow did not produce a valid output.');
@@ -31,6 +33,7 @@ const mrzPrompt = ai.definePrompt({
   name: 'mrzPrompt',
   input: {schema: ExtractMrzDataInputSchema},
   output: {schema: MrzDataSchema},
+  model: 'googleai/gemini-1.5-pro-preview',
   prompt: `You are an expert system for extracting information from government-issued identity documents. Analyze the provided image, which contains both a visual inspection zone (VIZ) and a machine-readable zone (MRZ). Your task is to accurately extract the specified fields and return them in a structured JSON format.
 
 CRITICAL INSTRUCTIONS:
@@ -48,9 +51,7 @@ CRITICAL INSTRUCTIONS:
 Analyze the following document image:
 {{media url=photoDataUri}}
 `,
-  // Use a model capable of multimodal input
   config: {
-    model: 'googleai/gemini-1.5-flash-preview',
     temperature: 0.1, // Lower temperature for more deterministic, structured output
   },
 });
