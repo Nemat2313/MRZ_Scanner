@@ -59,24 +59,28 @@ function parseYandexGPTResponse(responseText: string): MrzDataType {
 export async function extractMrzFromText(input: ExtractMrzTextInput): Promise<MrzDataType> {
     const { ocrText } = input;
     
-    const prompt = `You are a world-class system with specialized expertise in parsing Machine-Readable Zones (MRZ) and visually inspected data from government-issued identity documents. You will be given raw text extracted by an OCR engine. Your task is to analyze this text, find the relevant information, and return it as a JSON object.
+    const prompt = `You are an expert at extracting passport information from OCR text that contains both the photo page data and MRZ (Machine Readable Zone) data.
 
-The provided text may contain OCR errors and extraneous information. Focus on finding patterns that match MRZ lines (usually starting with 'P<', 'I<', 'V<') and other visible data fields.
+Analyze the OCR text carefully. If the document has multiple pages, first locate the single page that contains the Machine-Readable Zone (MRZ) at the bottom. All subsequent parsing must be performed ONLY on that specific page's text.
+Then, extract the following fields and return them in a single JSON object.
 
-CRITICAL INSTRUCTIONS:
-1.  **Analyze the OCR Text:** Carefully read the entire text provided below. Identify lines that constitute the MRZ and other data fields like 'Date of Issue', 'Place of Birth', and 'Authority'.
-2.  **Character Correction:** Be aware of common OCR errors. 'O' is a letter, '0' is a digit. 'I' is a letter, '1' is a digit. '<' is a filler character. Correct these based on context.
-3.  **Field Parsing by Format:** Parse fields based on standard TD1, TD2, or TD3 MRZ formats.
-4.  **Country-Specific Rules:**
-    *   **Uzbekistan (UZB):** 
-        *   The \`personalNumber\` is a 14-digit number. Ensure you extract exactly 14 digits for this field if the issuing country is UZB.
-5.  **Output Formatting Rules:**
-    *   **Names:** Replace all filler '<' characters with a single space. For example, "DOE<<JOHN<PAUL" should become "DOE JOHN PAUL".
-    *   **Document Number:** This field is mandatory. If you cannot find a valid Document Number, the entire process fails.
-    *   **Empty fields:** If a field is not found or is entirely composed of filler characters ('<<<<<<<<<<'), return an empty string for it.
-    *   Return all other fields exactly as they are read from their designated positions, excluding checksum digits.
+1.  **documentType**: Extract from the first letter of the MRZ line 1 (usually 'P' for passport).
+2.  **issuingCountry**: Extract from MRZ line 1 after the document type.
+3.  **documentNumber**: Extract from MRZ line 2 (starts right after the line begins).
+4.  **surname**: Extract from MRZ line 1, after the country code, until the '<<'. Replace any '<' with a single space.
+5.  **givenName**: Extract from MRZ line 1, after the '<<' following surname, until the end of line. Replace any '<' with a single space.
+6.  **nationality**: Extract from the photo page text, not from the MRZ.
+7.  **dateOfBirth**: Extract from MRZ line 2 (positions 14–19).
+8.  **sex**: Extract from MRZ line 2 (position 21).
+9.  **dateOfIssue**: Extract from the photo page text, not from MRZ.
+10. **expiryDate**: Extract from MRZ line 2 (positions 22–27).
+11. **placeOfBirth**: Extract from the photo page text.
+12. **authority**: Extract from the photo page text.
+13. **personalNumber**: Extract from the MRZ if available.
 
-Process the document text and respond ONLY with a valid JSON object with the following keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Do not include any explanatory text, markdown, or code block syntax before or after the JSON object. Just the raw JSON.
+All text should be in uppercase (if Latin), with no unnecessary characters. Avoid guessing missing fields — leave blank or null if not visible or not clearly extractable.
+
+Respond ONLY with a valid JSON object with the keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Do not include any explanatory text, markdown, or code block syntax before or after the JSON object. Just the raw JSON.
 
 Here is the OCR text:
 ---
