@@ -33,7 +33,7 @@ const mrzPrompt = ai.definePrompt({
   name: 'mrzPrompt',
   input: {schema: ExtractMrzDataInputSchema},
   output: {schema: MrzDataSchema},
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'googleai/gemini-pro',
   prompt: `You are an expert system for extracting information from government-issued identity documents. Analyze the provided image, which contains both a visual inspection zone (VIZ) and a machine-readable zone (MRZ). Your task is to accurately extract the specified fields and return them in a structured JSON format.
 
 CRITICAL INSTRUCTIONS:
