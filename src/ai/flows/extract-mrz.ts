@@ -1,18 +1,17 @@
-
 'use server';
 
 /**
- * @fileOverview Extracts MRZ data from a document image using YandexGPT.
+ * @fileOverview Extracts MRZ data from OCR'd text using YandexGPT.
  *
- * - extractMrz - A function that extracts Machine-Readable Zone (MRZ) data from an image.
- * - ExtractMrzInput - The input type for the extractMrz function.
- * - MrzData - The return type for the extractMrz function, which is also defined in `src/types`.
+ * - extractMrzFromText - A function that extracts Machine-Readable Zone (MRZ) data from a string.
+ * - ExtractMrzTextInput - The input type for the extractMrzFromText function.
+ * - MrzData - The return type for the extractMrzFromText function, which is also defined in `src/types`.
  */
 import { YandexGPT } from '@/services/yandex';
 import type { MrzData as MrzDataType } from '@/types';
 
-export interface ExtractMrzInput {
-  photoDataUri: string;
+export interface ExtractMrzTextInput {
+  ocrText: string;
 }
 
 const yandexGpt = new YandexGPT();
@@ -49,36 +48,39 @@ function parseYandexGPTResponse(responseText: string): MrzDataType {
     }
 }
 
-export async function extractMrz(input: ExtractMrzInput): Promise<MrzDataType> {
-    const { photoDataUri } = input;
+export async function extractMrzFromText(input: ExtractMrzTextInput): Promise<MrzDataType> {
+    const { ocrText } = input;
     
-    // The service now expects the full data URI, but we only need the base64 part for the API call.
-    const base64Image = photoDataUri.split(',')[1];
-    
-    const prompt = `You are a world-class OCR system with specialized expertise in parsing Machine-Readable Zones (MRZ) and visually inspecting government-issued identity documents. Your task is to extract information with maximum accuracy and return it as a JSON object.
+    const prompt = `You are a world-class system with specialized expertise in parsing Machine-Readable Zones (MRZ) and visually inspected data from government-issued identity documents. You will be given raw text extracted by an OCR engine. Your task is to analyze this text, find the relevant information, and return it as a JSON object.
 
-First, process the MRZ data according to the critical instructions below.
-Second, visually inspect the rest of the document image (outside of the MRZ) to find the 'dateOfIssue', 'placeOfBirth', and 'authority' fields. If these fields are not present, return them as empty strings.
+The provided text may contain OCR errors and extraneous information. Focus on finding patterns that match MRZ lines (usually starting with 'P<', 'I<', 'V<') and other visible data fields.
 
-CRITICAL INSTRUCTIONS (MRZ Parsing):
-1.  **Character Accuracy:** Be extremely careful about common OCR errors. 'O' is a letter, '0' is a digit. 'I' is a letter, '1' is a digit. '<' is a filler character. Double-check every character.
-2.  **Field Parsing by Format:** Parse fields based on standard TD1, TD2, or TD3 MRZ formats.
-3.  **Country-Specific Rules:**
+CRITICAL INSTRUCTIONS:
+1.  **Analyze the OCR Text:** Carefully read the entire text provided below. Identify lines that constitute the MRZ and other data fields like 'Date of Issue', 'Place of Birth', and 'Authority'.
+2.  **Character Correction:** Be aware of common OCR errors. 'O' is a letter, '0' is a digit. 'I' is a letter, '1' is a digit. '<' is a filler character. Correct these based on context.
+3.  **Field Parsing by Format:** Parse fields based on standard TD1, TD2, or TD3 MRZ formats.
+4.  **Country-Specific Rules:**
     *   **Uzbekistan (UZB):** 
         *   The \`personalNumber\` is a 14-digit number. Ensure you extract exactly 14 digits for this field if the issuing country is UZB.
-4.  **Output Formatting Rules:**
+5.  **Output Formatting Rules:**
     *   **Names:** Replace all filler '<' characters with a single space. For example, "DOE<<JOHN<PAUL" should become "DOE JOHN PAUL".
-    *   **Document Number:** This field is mandatory. If you cannot extract a valid Document Number, the entire process fails.
-    *   **Empty fields:** If a field is entirely composed of filler characters (e.g., '<<<<<<<<<<'), return an empty string for it.
+    *   **Document Number:** This field is mandatory. If you cannot find a valid Document Number, the entire process fails.
+    *   **Empty fields:** If a field is not found or is entirely composed of filler characters ('<<<<<<<<<<'), return an empty string for it.
     *   Return all other fields exactly as they are read from their designated positions, excluding checksum digits.
 
-Process the document and respond ONLY with a valid JSON object with the following keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Do not include any explanatory text, markdown, or code block syntax before or after the JSON object. Just the raw JSON.`;
+Process the document text and respond ONLY with a valid JSON object with the following keys: "documentType", "issuingCountry", "surname", "givenName", "documentNumber", "nationality", "dateOfBirth", "sex", "expiryDate", "personalNumber", "dateOfIssue", "placeOfBirth", "authority". Do not include any explanatory text, markdown, or code block syntax before or after the JSON object. Just the raw JSON.
 
-    const response = await yandexGpt.getChatCompletion(prompt, base64Image);
+Here is the OCR text:
+---
+${ocrText}
+---
+`;
+
+    const response = await yandexGpt.getCompletion(prompt);
     const mrzData = parseYandexGPTResponse(response);
 
     if (!mrzData.documentNumber) {
-        throw new Error('Failed to extract a valid Document Number from the MRZ.');
+        throw new Error('Failed to extract a valid Document Number from the provided text.');
     }
 
     return mrzData;

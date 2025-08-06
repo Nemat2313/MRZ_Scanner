@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { Language, MrzData, ScanResult } from '@/types';
-import { extractMrzAction, askYandexAction } from '@/app/actions';
+import { analyzeMrzTextAction, askYandexAction } from '@/app/actions';
 import { exportToCsv, exportToXlsx } from '@/lib/export';
 import { LanguageProvider, useLanguage } from '@/contexts/language-context';
 import { FileUploader } from './file-uploader';
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
+import { createWorker, Worker } from 'tesseract.js';
 
 const Header = () => {
   const { t } = useLanguage();
@@ -41,14 +42,14 @@ const Header = () => {
 
 function formatMrzDate(dateStr: string, isExpiry: boolean): string {
   if (!/^\d{6}$/.test(dateStr)) {
-    return ''; // Return empty if not in YYMMDD format
+    return dateStr; // Return original if not in YYMMDD format
   }
   const year = parseInt(dateStr.substring(0, 2), 10);
   const month = parseInt(dateStr.substring(2, 4), 10);
   const day = parseInt(dateStr.substring(4, 6), 10);
 
   if (month < 1 || month > 12 || day < 1 || day > 31) {
-    return ''; // Basic validation for month and day
+    return dateStr; // Basic validation for month and day
   }
 
   let fullYear: number;
@@ -63,9 +64,6 @@ function formatMrzDate(dateStr: string, isExpiry: boolean): string {
      }
   } else { // Date of Birth
     fullYear = (year > current2DigitYear) ? (currentCentury - 100) + year : currentCentury + year;
-    if (fullYear < 1940) {
-        return ''; // Return empty if birth year is before 1940
-    }
   }
   
   const monthStr = month.toString().padStart(2, '0');
@@ -224,77 +222,80 @@ const MrzScannerCore = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
+  const workerRef = useRef<Worker | null>(null);
+  
+  useEffect(() => {
+    const initializeWorker = async () => {
+      const worker = await createWorker('eng+rus+tur', 1, {
+          logger: m => console.log(m),
+      });
+      workerRef.current = worker;
+    };
+    initializeWorker();
+    
+    return () => {
+      workerRef.current?.terminate();
+    }
+  }, []);
 
   const handleFiles = async (files: File[]) => {
+    if (!workerRef.current) {
+        toast({
+            variant: 'destructive',
+            title: 'OCR Error',
+            description: 'OCR worker is not ready. Please try again in a moment.'
+        });
+        return;
+    }
     setIsProcessing(true);
 
     const newScans = files.map((file) => ({
       id: `${file.name}-${Date.now()}`,
       fileName: file.name,
-      originalImage: '',
+      originalImage: URL.createObjectURL(file), // Use object URL for display
       status: 'processing' as const,
     }));
 
     setResults((prev) => [...newScans, ...prev]);
 
     for (const file of files) {
-      const id = newScans.find(s => s.fileName === file.name)!.id;
-      const reader = new FileReader();
+      const scan = newScans.find(s => s.fileName === file.name)!;
+      try {
+        const { data: { text } } = await workerRef.current.recognize(file);
+        
+        const mrzResult = await analyzeMrzTextAction({ ocrText: text });
 
-      reader.readAsDataURL(file);
-      await new Promise<void>((resolve) => {
-        reader.onload = async () => {
-          const originalImage = reader.result as string;
+        if (mrzResult.success && mrzResult.data) {
+          const formattedData = {
+            ...mrzResult.data,
+            dateOfBirth: formatMrzDate(mrzResult.data.dateOfBirth, false),
+            expiryDate: formatMrzDate(mrzResult.data.expiryDate, true),
+            dateOfIssue: formatDate(mrzResult.data.dateOfIssue),
+          };
 
-          setResults((prev) => prev.map(r => r.id === id ? {...r, originalImage} : r));
-          
-          const mrzResult = await extractMrzAction({ photoDataUri: originalImage });
-
-          if (mrzResult.success && mrzResult.data) {
-            const formattedData = {
-              ...mrzResult.data,
-              dateOfBirth: formatMrzDate(mrzResult.data.dateOfBirth, false),
-              expiryDate: formatMrzDate(mrzResult.data.expiryDate, true),
-              dateOfIssue: formatDate(mrzResult.data.dateOfIssue),
-            };
-
-            setResults((prev) =>
-              prev.map((r) =>
-                r.id === id
-                  ? {
-                      ...r,
-                      status: 'success',
-                      mrzData: formattedData,
-                    }
-                  : r
-              )
-            );
-          } else {
-            const errorMsg = mrzResult.error || 'Failed to extract MRZ data.';
-            setResults((prev) =>
-              prev.map((r) =>
-                r.id === id ? { ...r, status: 'error', error: errorMsg } : r
-              )
-            );
-            toast({
-              variant: 'destructive',
-              title: t('scanFailed'),
-              description: `${file.name}: ${errorMsg}`,
-            });
-          }
-          resolve();
-        };
-        reader.onerror = () => {
-          const errorMsg = 'Failed to read file.';
           setResults((prev) =>
             prev.map((r) =>
-              r.id === id ? { ...r, status: 'error', error: errorMsg } : r
+              r.id === scan.id
+                ? { ...r, status: 'success', mrzData: formattedData } : r
             )
           );
-          toast({ variant: 'destructive', title: 'Error', description: errorMsg });
-          resolve();
-        };
-      });
+        } else {
+          throw new Error(mrzResult.error || 'Failed to analyze MRZ data from text.');
+        }
+
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'An unknown error occurred during processing.';
+        setResults((prev) =>
+          prev.map((r) =>
+            r.id === scan.id ? { ...r, status: 'error', error: errorMsg } : r
+          )
+        );
+        toast({
+          variant: 'destructive',
+          title: t('scanFailed'),
+          description: `${file.name}: ${errorMsg}`,
+        });
+      }
     }
     setIsProcessing(false);
   };

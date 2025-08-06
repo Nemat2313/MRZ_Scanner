@@ -1,44 +1,45 @@
 'use server';
 
-import { extractMrz } from '@/ai/flows/extract-mrz';
+import { extractMrzFromText } from '@/ai/flows/extract-mrz';
 import { YandexGPT } from '@/services/yandex';
 import { z } from 'zod';
 
 const extractActionSchema = z.object({
-  photoDataUri: z.string(),
+  ocrText: z.string(),
 });
 
-export async function extractMrzAction(values: { photoDataUri: string }) {
+export async function analyzeMrzTextAction(values: { ocrText: string }) {
   const validated = extractActionSchema.safeParse(values);
   if (!validated.success) {
     return {
       success: false,
-      error: 'Invalid input for MRZ extraction.',
+      error: 'Invalid input for MRZ analysis.',
     };
   }
   
   try {
-    const result = await extractMrz({
-      photoDataUri: validated.data.photoDataUri,
+    const result = await extractMrzFromText({
+      ocrText: validated.data.ocrText,
     });
     return {
       success: true,
       data: result,
     };
   } catch (error) {
-    console.error('Error extracting MRZ:', error);
+    console.error('Error analyzing MRZ text:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return {
       success: false,
-      error: `Failed to extract MRZ data. Details: ${errorMessage}`,
+      error: `Failed to analyze MRZ data. Details: ${errorMessage}`,
     };
   }
 }
 
+// This function is kept for the Yandex Test component
 export async function askYandexAction(prompt: string) {
   try {
     const yandexGpt = new YandexGPT();
-    const result = await yandexGpt.getTextCompletion(prompt);
+    const result = await yandexGpt.getCompletion(prompt);
     return {
       success: true,
       data: result,
