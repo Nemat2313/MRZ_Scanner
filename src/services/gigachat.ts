@@ -77,7 +77,7 @@ export class GigaChat {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Accept': 'application/json',
-            'RqUID': this.clientId, 
+            'RqUID': uuidv4(),
             'Authorization': `Bearer ${this.clientSecret}`,
           },
         }
