@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { MrzData } from '@/types';
+import https from 'https';
 
 const OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
 const FILES_URL = 'https://gigachat.devices.sberbank.ru/api/v1/files';
@@ -62,6 +63,11 @@ export class GigaChat {
       return tokenCache.accessToken;
     }
 
+    // This agent will ignore SSL verification errors, matching `verify=False` in Python.
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     try {
       const authData = new URLSearchParams();
       authData.append('scope', 'GIGACHAT_API_PERS');
@@ -76,6 +82,7 @@ export class GigaChat {
             'RqUID': this.clientId,
             'Authorization': `Bearer ${this.clientSecret}`,
           },
+          httpsAgent, // Use the agent to bypass SSL verification
         }
       );
       
@@ -95,6 +102,7 @@ export class GigaChat {
 
   public async uploadFile(fileBlob: Blob): Promise<string> {
     const accessToken = await this.getAccessToken();
+    const httpsAgent = new https.Agent({ rejectUnauthorized: false });
     
     const formData = new FormData();
     formData.append('file', fileBlob, 'document.png');
@@ -105,6 +113,7 @@ export class GigaChat {
           'Authorization': `Bearer ${accessToken}`,
           'Accept': 'application/json',
         },
+        httpsAgent,
       });
       return response.data.id;
     } catch (error) {
@@ -116,12 +125,13 @@ export class GigaChat {
 
   public async analyzeImage(fileId: string, prompt: string): Promise<MrzData> {
     const accessToken = await this.getAccessToken();
+    const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
     try {
       const response = await axios.post(
         COMPLETIONS_URL,
         {
-          model: 'GigaChat-Pro',
+          model: 'GigaChat-Pro', // Using the updated model
           messages: [
             {
               role: 'user',
@@ -140,6 +150,7 @@ export class GigaChat {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
+          httpsAgent,
         }
       );
 
