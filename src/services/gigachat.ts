@@ -1,6 +1,5 @@
 import axios from 'axios';
 import type { MrzData } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
 
 const OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
 const FILES_URL = 'https://gigachat.devices.sberbank.ru/api/v1/files';
@@ -74,7 +73,7 @@ export class GigaChat {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Accept': 'application/json',
-            'RqUID': uuidv4(),
+            'RqUID': this.clientId,
             'Authorization': `Bearer ${this.clientSecret}`,
           },
         }
