@@ -11,11 +11,9 @@ interface Token {
   expiresAt: number;
 }
 
-// Simple in-memory cache for the token
 let tokenCache: Token | null = null;
 
 function cleanJsonString(jsonString: string): string {
-    // Remove markdown and any other non-JSON text
     const match = jsonString.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
     return match ? match[0] : '';
 }
@@ -26,7 +24,6 @@ function parseGigaChatResponse(responseText: string): MrzData {
         const parsed = JSON.parse(cleanedResponse);
         const data = Array.isArray(parsed) ? parsed[0] : parsed;
 
-        // Ensure all fields are strings and handle optional fields
         return {
             documentType: data.documentType || data.тип_документа || '',
             issuingCountry: data.issuingCountry || data.страна_выдачи || '',
@@ -49,7 +46,6 @@ function parseGigaChatResponse(responseText: string): MrzData {
     }
 }
 
-
 export class GigaChat {
   private clientId: string;
   private clientSecret: string;
@@ -68,11 +64,12 @@ export class GigaChat {
     }
 
     try {
+      const authData = new URLSearchParams();
+      authData.append('scope', 'GIGACHAT_API_PERS');
+
       const response = await axios.post(
         OAUTH_URL,
-        new URLSearchParams({
-          scope: 'GIGACHAT_API_PERS',
-        }),
+        authData,
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -91,7 +88,8 @@ export class GigaChat {
       
       return access_token;
     } catch (error) {
-      console.error('Error getting GigaChat access token:', error.response?.data || error.message);
+      const axiosError = error as import('axios').AxiosError;
+      console.error('Error getting GigaChat access token:', axiosError.response?.data || axiosError.message);
       throw new Error('Could not authenticate with GigaChat.');
     }
   }
@@ -111,7 +109,8 @@ export class GigaChat {
       });
       return response.data.id;
     } catch (error) {
-      console.error('Error uploading file to GigaChat:', error.response?.data || error.message);
+      const axiosError = error as import('axios').AxiosError;
+      console.error('Error uploading file to GigaChat:', axiosError.response?.data || axiosError.message);
       throw new Error('Could not upload file to GigaChat.');
     }
   }
@@ -123,7 +122,7 @@ export class GigaChat {
       const response = await axios.post(
         COMPLETIONS_URL,
         {
-          model: 'GigaChat-Pro', // Using Pro model as it's generally more capable
+          model: 'GigaChat-Pro',
           messages: [
             {
               role: 'user',
@@ -149,7 +148,8 @@ export class GigaChat {
       return parseGigaChatResponse(content);
 
     } catch (error) {
-      console.error('Error analyzing image with GigaChat:', error.response?.data || error.message);
+      const axiosError = error as import('axios').AxiosError;
+      console.error('Error analyzing image with GigaChat:', axiosError.response?.data || axiosError.message);
       throw new Error('GigaChat failed to analyze the image.');
     }
   }
