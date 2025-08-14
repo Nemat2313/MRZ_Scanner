@@ -110,6 +110,8 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                         <TableHead className="min-w-[150px]">{t('surname')}</TableHead>
                         <TableHead className="min-w-[150px]">{t('givenName')}</TableHead>
                         <TableHead className="min-w-[150px]">{t('documentNumber')}</TableHead>
+                        <TableHead className="min-w-[120px]">{t('dateOfBirth')}</TableHead>
+                        <TableHead className="min-w-[120px]">{t('expiryDate')}</TableHead>
                         <TableHead className="max-w-xs">{t('fileName')}</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -141,6 +143,8 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                                <TableCell className="min-w-[150px] p-4 font-mono">{result.mrzData?.surname}</TableCell>
                                <TableCell className="min-w-[150px] p-4 font-mono">{result.mrzData?.givenName}</TableCell>
                                <TableCell className="min-w-[150px] p-4 font-mono">{result.mrzData?.documentNumber}</TableCell>
+                               <TableCell className="min-w-[120px] p-4 font-mono">{result.mrzData?.dateOfBirth}</TableCell>
+                               <TableCell className="min-w-[120px] p-4 font-mono">{result.mrzData?.expiryDate}</TableCell>
                                <TableCell className="font-medium truncate max-w-xs p-4">{result.fileName}</TableCell>
                             </TableRow>
                          </TableBody>
