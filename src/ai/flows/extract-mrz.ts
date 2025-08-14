@@ -1,29 +1,18 @@
 'use server';
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import {MrzData as MrzDataType} from '@/types';
-import {
-  ExtractMrzDataInputSchema,
-  MrzDataSchema,
-} from '@/types/mrz';
+import type { MrzData } from '@/types';
+import { GoogleAIService } from '@/services/google-ai';
 
-export type ExtractMrzDataInput = z.infer<typeof ExtractMrzDataInputSchema>;
-export type MrzData = z.infer<typeof MrzDataSchema>;
+export interface ExtractMrzDataInput {
+  photoDataUri: string;
+}
 
-const extractMrzFlow = ai.defineFlow(
-  {
-    name: 'extractMrzFlow',
-    inputSchema: ExtractMrzDataInputSchema,
-    outputSchema: MrzDataSchema,
-  },
-  async input => {
-    const mrzPrompt = ai.definePrompt({
-      name: 'mrzPrompt',
-      model: 'googleai/gemini-pro-vision',
-      input: {schema: ExtractMrzDataInputSchema},
-      output: {schema: MrzDataSchema},
-      prompt: `Вы — OCR-система мирового класса, специализирующаяся на анализе машиночитаемых зон (MRZ) и визуальном осмотре государственных документов. Ваша задача — извлечь информацию с максимальной точностью.
+export async function extractMrzData(
+  input: ExtractMrzDataInput
+): Promise<MrzData> {
+  const googleAiService = new GoogleAIService();
+
+  const prompt = `Вы — OCR-система мирового класса, специализирующаяся на анализе машиночитаемых зон (MRZ) и визуальном осмотре государственных документов. Ваша задача — извлечь информацию с максимальной точностью.
 
 Сначала обработайте данные MRZ. Затем осмотрите остальную часть изображения документа (визуальную зону, VIZ), чтобы найти поля 'dateOfIssue', 'placeOfBirth' и 'authority'.
 
@@ -39,21 +28,19 @@ const extractMrzFlow = ai.defineFlow(
     *   Не включайте никакого пояснительного текста или markdown-разметки ('''json''') до или после JSON.
     *   Если поле не найдено, верните его как пустую строку.
 
-Проанализируйте следующее изображение документа и верните JSON:
-{{media url=photoDataUri}}`,
-    });
+Проанализируйте следующее изображение документа и верните JSON.`;
 
-    const {output} = await mrzPrompt(input);
-    if (!output || !output.documentNumber) {
-      throw new Error('Failed to extract a valid Document Number from the MRZ.');
-    }
-    return output;
+  const mimeType = input.photoDataUri.substring(
+    input.photoDataUri.indexOf(':') + 1,
+    input.photoDataUri.indexOf(';')
+  );
+  const base64Image = input.photoDataUri.split(',')[1];
+
+  const mrzData = await googleAiService.analyzeImage(prompt, base64Image, mimeType);
+
+  if (!mrzData.documentNumber) {
+    throw new Error('Failed to extract a valid Document Number from the MRZ.');
   }
-);
 
-export async function extractMrzData(
-  input: ExtractMrzDataInput
-): Promise<MrzDataType> {
-  const result = await extractMrzFlow(input);
-  return result as MrzDataType;
+  return mrzData;
 }
