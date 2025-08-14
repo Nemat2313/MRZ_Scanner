@@ -57,6 +57,7 @@ const DetailView = ({ result }: { result: ScanResult }) => {
                 alt={result.fileName}
                 fill
                 className="object-contain"
+                data-ai-hint="passport scan"
             />
          </div>
        </div>
@@ -100,31 +101,34 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
         <CardDescription>{t('resultsDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="w-full overflow-x-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[80px]"></TableHead>
+                        <TableHead className="min-w-[120px]">{t('status')}</TableHead>
+                        <TableHead className="min-w-[150px]">{t('surname')}</TableHead>
+                        <TableHead className="min-w-[150px]">{t('givenName')}</TableHead>
+                        <TableHead className="min-w-[150px]">{t('documentNumber')}</TableHead>
+                        <TableHead className="max-w-xs">{t('fileName')}</TableHead>
+                    </TableRow>
+                </TableHeader>
+            </Table>
+        </div>
         <Accordion type="multiple" className="w-full space-y-2">
           {results.map((result) => (
             <AccordionItem value={result.id} key={result.id} className="border-b-0 rounded-lg border bg-card text-card-foreground shadow-sm">
-                <AccordionTrigger className="p-4 hover:no-underline data-[state=open]:border-b">
-                    <div className="w-full overflow-x-auto">
-                      <Table className="min-w-full">
-                        <TableHeader className="sr-only">
-                          <TableRow>
-                             <TableHead className="w-[50px]"></TableHead>
-                             <TableHead>{t('status')}</TableHead>
-                             <TableHead>{t('surname')}</TableHead>
-                             <TableHead>{t('givenName')}</TableHead>
-                             <TableHead>{t('documentNumber')}</TableHead>
-                             <TableHead>{t('fileName')}</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                         <TableBody>
-                            <TableRow className="border-0 hover:bg-transparent">
-                               <TableCell className="w-[50px] p-0 pl-2">
+                <AccordionTrigger className="p-0 hover:no-underline data-[state=open]:border-b group">
+                     <Table className="w-full">
+                        <TableBody>
+                           <TableRow className="border-0 hover:bg-transparent">
+                               <TableCell className="w-[80px] p-0 pl-4">
                                   <div className="flex items-center gap-4">
                                      <StatusIcon status={result.status} />
                                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                   </div>
                                </TableCell>
-                               <TableCell className="p-0 px-2 min-w-[120px]">
+                               <TableCell className="min-w-[120px] p-4">
                                  {result.status !== 'processing' && (
                                      <Badge
                                        variant={result.status === 'success' ? 'default' : 'destructive'}
@@ -134,14 +138,13 @@ export function ResultsDisplay({ results }: ResultsDisplayProps) {
                                      </Badge>
                                    )}
                                </TableCell>
-                               <TableCell className="p-0 px-2 min-w-[150px] font-mono">{result.mrzData?.surname}</TableCell>
-                               <TableCell className="p-0 px-2 min-w-[150px] font-mono">{result.mrzData?.givenName}</TableCell>
-                               <TableCell className="p-0 px-2 min-w-[150px] font-mono">{result.mrzData?.documentNumber}</TableCell>
-                               <TableCell className="p-0 px-2 font-medium truncate max-w-xs">{result.fileName}</TableCell>
+                               <TableCell className="min-w-[150px] p-4 font-mono">{result.mrzData?.surname}</TableCell>
+                               <TableCell className="min-w-[150px] p-4 font-mono">{result.mrzData?.givenName}</TableCell>
+                               <TableCell className="min-w-[150px] p-4 font-mono">{result.mrzData?.documentNumber}</TableCell>
+                               <TableCell className="font-medium truncate max-w-xs p-4">{result.fileName}</TableCell>
                             </TableRow>
                          </TableBody>
                       </Table>
-                    </div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <DetailView result={result} />
