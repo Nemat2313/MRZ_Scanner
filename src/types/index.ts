@@ -17,6 +17,11 @@ export interface MrzData {
   [key: string]: string | undefined;
 }
 
+export interface ExtractMrzResponse {
+  mrzData: MrzData;
+  rawOcrText: string;
+}
+
 export interface ScanResult {
   id: string;
   fileName: string;
@@ -24,6 +29,7 @@ export interface ScanResult {
   enhancedImage?: string;
   status: ScanStatus;
   mrzData?: MrzData;
+  rawOcrText?: string;
   error?: string;
 }
 

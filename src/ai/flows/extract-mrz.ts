@@ -1,6 +1,6 @@
 'use server';
 
-import type { MrzData } from '@/types';
+import type { MrzData, ExtractMrzResponse } from '@/types';
 import { YandexOCRService, YandexGPTService } from '@/services/yandex';
 
 export interface ExtractMrzDataInput {
@@ -15,8 +15,27 @@ export interface ExtractMrzDataInput {
  * @returns A cleaned string that should be valid JSON.
  */
 function cleanJsonString(jsonString: string): string {
-  const match = jsonString.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-  return match ? match[0] : '';
+  // Find the first occurrence of '{' or '['
+    const firstBracket = jsonString.search(/[[{]/);
+    if (firstBracket === -1) {
+        return '';
+    }
+
+    // Find the last occurrence of '}' or ']'
+    let lastBracket = -1;
+    for (let i = jsonString.length - 1; i >= 0; i--) {
+        if (jsonString[i] === '}' || jsonString[i] === ']') {
+            lastBracket = i;
+            break;
+        }
+    }
+
+    if (lastBracket === -1) {
+        return '';
+    }
+
+    // Extract the substring between the first and last brackets (inclusive)
+    return jsonString.substring(firstBracket, lastBracket + 1);
 }
 
 /**
@@ -62,7 +81,7 @@ function parseYandexGPTResponse(responseText: string): MrzData {
 
 export async function extractMrzData(
   input: ExtractMrzDataInput
-): Promise<MrzData> {
+): Promise<ExtractMrzResponse> {
   const yandexOcrService = new YandexOCRService();
   const yandexGptService = new YandexGPTService();
 
@@ -127,5 +146,5 @@ ${fullText}
     throw new Error('Failed to extract a valid Document Number from the text.');
   }
 
-  return mrzData;
+  return { mrzData, rawOcrText: fullText };
 }

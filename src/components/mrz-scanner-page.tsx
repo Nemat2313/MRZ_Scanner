@@ -2,7 +2,7 @@
 
 import {useState, useMemo} from 'react';
 import {useToast} from '@/hooks/use-toast';
-import type {Language, MrzData, ScanResult} from '@/types';
+import type {Language, MrzData, ScanResult, ExtractMrzResponse} from '@/types';
 import {extractMrzDataAction} from '@/app/actions';
 import {exportToCsv, exportToXlsx} from '@/lib/export';
 import {LanguageProvider, useLanguage} from '@/contexts/language-context';
@@ -166,10 +166,11 @@ const MrzScannerCore = () => {
         const result = await extractMrzDataAction({photoDataUri});
 
         if (result.success && result.data) {
+          const { mrzData, rawOcrText } = result.data as ExtractMrzResponse;
           setResults((prev) =>
             prev.map((r) =>
               r.id === scan.id
-                ? {...r, status: 'success', mrzData: result.data as MrzData}
+                ? {...r, status: 'success', mrzData, rawOcrText }
                 : r
             )
           );

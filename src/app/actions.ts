@@ -13,7 +13,7 @@ export async function extractMrzDataAction(values: ExtractMrzDataInput) {
       data: result,
     };
   } catch (error) {
-    console.error('Error analyzing MRZ data with Google AI:', error);
+    console.error('Error analyzing MRZ data:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown error occurred.';
     return {
