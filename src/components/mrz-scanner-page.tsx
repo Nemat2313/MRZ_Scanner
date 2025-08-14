@@ -190,6 +190,7 @@ const MrzScannerCore = () => {
           variant: 'destructive',
           title: t('scanFailed'),
           description: `${file.name}: ${errorMsg}`,
+          duration: 20000, // Show for 20 seconds
         });
       }
     }
