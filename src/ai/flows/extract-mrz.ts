@@ -1,53 +1,29 @@
 'use server';
 
-import type { MrzData } from '@/types';
-import { YandexGPT } from '@/services/yandex';
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+import {MrzData as MrzDataType} from '@/types';
+import {
+  ExtractMrzDataInputSchema,
+  MrzDataSchema,
+} from '@/types/mrz';
 
-export interface ExtractMrzDataInput {
-  photoDataUri: string;
-}
+export type ExtractMrzDataInput = z.infer<typeof ExtractMrzDataInputSchema>;
+export type MrzData = z.infer<typeof MrzDataSchema>;
 
-function cleanJsonString(jsonString: string): string {
-    const match = jsonString.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    return match ? match[0] : '';
-}
-
-function parseYandexGPTResponse(responseText: string): MrzData {
-    const cleanedResponse = cleanJsonString(responseText);
-    try {
-        const parsed = JSON.parse(cleanedResponse);
-        const data = Array.isArray(parsed) ? parsed[0] : parsed;
-
-        return {
-            documentType: data.documentType || data.тип_документа || '',
-            issuingCountry: data.issuingCountry || data.страна_выдачи || '',
-            surname: data.surname || data.фамилия || '',
-            givenName: data.givenName || data.имя || '',
-            documentNumber: data.documentNumber || data.номер_документа || '',
-            nationality: data.nationality || data.гражданство || '',
-            dateOfBirth: data.dateOfBirth || data.дата_рождения || '',
-            sex: data.sex || data.пол || '',
-            expiryDate: data.expiryDate || data.срок_действия || '',
-            personalNumber: data.personalNumber || data.личный_номер || '',
-            dateOfIssue: data.dateOfIssue || data.дата_выдачи || undefined,
-            placeOfBirth: data.placeOfBirth || data.место_рождения || undefined,
-            authority: data.authority || data.орган_выдачи || undefined,
-        };
-    } catch (error) {
-        console.error("Failed to parse YandexGPT JSON response:", error);
-        console.error("Original response text:", cleanedResponse);
-        throw new Error("Could not parse the structured data from the AI response.");
-    }
-}
-
-
-export async function extractMrzData(
-  input: ExtractMrzDataInput
-): Promise<MrzData> {
-  const yandexGpt = new YandexGPT();
-  const base64Image = input.photoDataUri.split(',')[1];
-  
-  const prompt = `Вы — OCR-система мирового класса, специализирующаяся на анализе машиночитаемых зон (MRZ) и визуальном осмотре государственных документов. Ваша задача — извлечь информацию с максимальной точностью.
+const extractMrzFlow = ai.defineFlow(
+  {
+    name: 'extractMrzFlow',
+    inputSchema: ExtractMrzDataInputSchema,
+    outputSchema: MrzDataSchema,
+  },
+  async input => {
+    const mrzPrompt = ai.definePrompt({
+      name: 'mrzPrompt',
+      model: 'googleai/gemini-pro-vision',
+      input: {schema: ExtractMrzDataInputSchema},
+      output: {schema: MrzDataSchema},
+      prompt: `Вы — OCR-система мирового класса, специализирующаяся на анализе машиночитаемых зон (MRZ) и визуальном осмотре государственных документов. Ваша задача — извлечь информацию с максимальной точностью.
 
 Сначала обработайте данные MRZ. Затем осмотрите остальную часть изображения документа (визуальную зону, VIZ), чтобы найти поля 'dateOfIssue', 'placeOfBirth' и 'authority'.
 
@@ -63,14 +39,21 @@ export async function extractMrzData(
     *   Не включайте никакого пояснительного текста или markdown-разметки ('''json''') до или после JSON.
     *   Если поле не найдено, верните его как пустую строку.
 
-Проанализируйте следующее изображение документа и верните JSON.`;
-  
-  const responseText = await yandexGpt.analyzeImage(prompt, base64Image);
-  const mrzData = parseYandexGPTResponse(responseText);
+Проанализируйте следующее изображение документа и верните JSON:
+{{media url=photoDataUri}}`,
+    });
 
-  if (!mrzData.documentNumber) {
-    throw new Error('Failed to extract a valid Document Number from the MRZ.');
+    const {output} = await mrzPrompt(input);
+    if (!output || !output.documentNumber) {
+      throw new Error('Failed to extract a valid Document Number from the MRZ.');
+    }
+    return output;
   }
+);
 
-  return mrzData;
+export async function extractMrzData(
+  input: ExtractMrzDataInput
+): Promise<MrzDataType> {
+  const result = await extractMrzFlow(input);
+  return result as MrzDataType;
 }

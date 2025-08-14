@@ -12,7 +12,6 @@ export const ExtractMrzDataInputSchema = z.object({
       "A photo of a passport or ID card, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
 });
-export type ExtractMrzDataInput = z.infer<typeof ExtractMrzDataInputSchema>;
 
 // Define the schema for the output data, matching the MrzData type
 export const MrzDataSchema = z.object({
@@ -54,4 +53,3 @@ export const MrzDataSchema = z.object({
     .optional()
     .describe('The authority that issued the document.'),
 });
-export type MrzData = z.infer<typeof MrzDataSchema>;
