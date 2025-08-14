@@ -7,6 +7,7 @@ export async function extractMrzDataAction(values: ExtractMrzDataInput) {
   try {
     const result = await extractMrzData({
       photoDataUri: values.photoDataUri,
+      fileName: values.fileName,
     });
     return {
       success: true,

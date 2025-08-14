@@ -5,79 +5,42 @@ import { YandexOCRService, YandexGPTService } from '@/services/yandex';
 
 export interface ExtractMrzDataInput {
   photoDataUri: string;
+  fileName: string;
 }
 
 /**
- * Cleans a string to extract only the JSON part.
- * It looks for the first '{' or '[' and the last '}' or ']'
- * and returns the content between them.
- * @param jsonString The potentially messy string from the AI.
- * @returns A cleaned string that should be valid JSON.
- */
-function cleanJsonString(jsonString: string): string {
-  // Find the first occurrence of '{' or '['
-    const firstBracket = jsonString.search(/[[{]/);
-    if (firstBracket === -1) {
-        return '';
-    }
-
-    // Find the last occurrence of '}' or ']'
-    let lastBracket = -1;
-    for (let i = jsonString.length - 1; i >= 0; i--) {
-        if (jsonString[i] === '}' || jsonString[i] === ']') {
-            lastBracket = i;
-            break;
-        }
-    }
-
-    if (lastBracket === -1) {
-        return '';
-    }
-
-    // Extract the substring between the first and last brackets (inclusive)
-    return jsonString.substring(firstBracket, lastBracket + 1);
-}
-
-/**
- * Parses the JSON response from YandexGPT, handling potential variations in field names (English/Russian).
- * @param responseText The raw string response from the AI.
+ * Parses the CSV string response from YandexGPT.
+ * @param csvString The raw CSV string response from the AI.
+ * @param fileName The original file name to include.
  * @returns An MrzData object.
  */
-function parseYandexGPTResponse(responseText: string): MrzData {
-  const cleanedResponse = cleanJsonString(responseText);
-  try {
-    // The response might be a JSON array with a single object, or just the object.
-    const parsed = JSON.parse(cleanedResponse);
-    const data = Array.isArray(parsed) ? parsed[0] : parsed;
+function parseCsvResponse(csvString: string): MrzData {
+  const values = csvString.trim().split(',').map(v => v.trim());
 
-    if (!data) {
-      throw new Error('Parsed JSON is empty or null.');
-    }
+  const headers = [
+    'documentType', 'issuingCountry', 'surname', 'givenName', 
+    'documentNumber', 'nationality', 'dateOfBirth', 'sex', 
+    'expiryDate', 'personalNumber', 'dateOfIssue', 'placeOfBirth', 
+    'authority'
+  ];
 
-    // Map Russian and English keys to our standard MrzData fields
-    return {
-      documentType: data.documentType || data.тип_документа || '',
-      issuingCountry: data.issuingCountry || data.страна_выдачи || '',
-      surname: data.surname || data.фамилия || '',
-      givenName: data.givenName || data.имя || '',
-      documentNumber: data.documentNumber || data.номер_документа || '',
-      nationality: data.nationality || data.гражданство || '',
-      dateOfBirth: data.dateOfBirth || data.дата_рождения || '',
-      sex: data.sex || data.пол || '',
-      expiryDate: data.expiryDate || data.срок_действия || '',
-      personalNumber: data.personalNumber || data.личный_номер || '',
-      dateOfIssue: data.dateOfIssue || data.дата_выдачи || undefined,
-      placeOfBirth: data.placeOfBirth || data.место_рождения || undefined,
-      authority: data.authority || data.орган_выдачи || undefined,
-    };
-  } catch (error) {
-    console.error('Failed to parse YandexGPT JSON response:', error);
-    console.error('Original cleaned response text:', cleanedResponse);
-    throw new Error(
-      'Could not parse the structured data from the AI response.'
-    );
+  if (values.length < headers.length) {
+      console.error('CSV response has too few columns.', {
+          expected: headers.length,
+          got: values.length,
+          csvString
+      });
+      throw new Error(`AI returned incomplete data. Expected ${headers.length} columns, but got ${values.length}.`);
   }
+
+  const data: Partial<MrzData> = {};
+  headers.forEach((header, index) => {
+      data[header as keyof MrzData] = values[index] || '';
+  });
+
+  return data as MrzData;
 }
+
 
 export async function extractMrzData(
   input: ExtractMrzDataInput
@@ -95,52 +58,72 @@ export async function extractMrzData(
   const fullText = await yandexOcrService.recognizeText(base64Image, mimeType);
 
   // Step 2: Send the raw text to YandexGPT for intelligent parsing
-  const prompt = `Вы — высокоточная система анализа документов. Ваша задача — извлечь структурированные данные из текста, полученного с помощью OCR. Текст содержит визуальную зону (VIZ) и машиночитаемую зону (MRZ).
+  const prompt = `Ты — строгий парсер паспортов. На входе у тебя есть Raw OCR Text (только текст, без изображения) и имя файла.
+Задача: извлечь поля и вернуть одну строку CSV в точном порядке заголовков (см. ниже). Никаких пояснений, только CSV-строка.
 
-КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА:
+Правила:
 
-1.  **ОБНАРУЖЕНИЕ MRZ (Первый и главный шаг):**
-    *   Найдите в тексте строки, содержащие множество символов '<'. Обычно они начинаются с 'P<', 'I<' или 'V<'. Это — Машиночитаемая Зона (MRZ).
-    *   **ВСЕ ПОСЛЕДУЮЩИЕ ПРАВИЛА ЗАВИСЯТ ОТ ЭТОГО ШАГА!** Если вы не можете найти MRZ, дальнейший анализ невозможен.
+Сначала парсь MRZ (признак — много символов <). Паспортный формат TD3: 2 строки по 44 символа.
 
-2.  **ИСТОЧНИК ДАННЫХ (СТРОГОЕ РАСПРЕДЕЛЕНИЕ):**
-    *   **ИСКЛЮЧИТЕЛЬНО ИЗ MRZ:** Следующие поля должны быть извлечены **ТОЛЬКО** из MRZ (строк с '<'). **ЗАПРЕЩЕНО** брать их из визуальной зоны (VIZ).
-        *   \`documentType\`
-        *   \`issuingCountry\`
-        *   \`surname\`
-        *   \`givenName\`
-        *   \`documentNumber\`
-        *   \`nationality\`
-        *   \`dateOfBirth\`
-        *   \`sex\`
-        *   \`expiryDate\`
-        *   \`personalNumber\`
-    *   **ИСКЛЮЧИТЕЛЬНО ИЗ VIZ:** Следующие поля должны быть найдены **ТОЛЬКО** в остальной, визуальной части текста (где нет '<').
-        *   \`dateOfIssue\`
-        *   \`placeOfBirth\`
-        *   \`authority\`
+Разделитель полей в MRZ — <.
 
-3.  **АНАЛИЗ И ФОРМАТИРОВАНИЕ (ОБЯЗАТЕЛЬНО К ИСПОЛНЕНИЮ):**
-    *   **\`surname\` и \`givenName\`:** Извлеките из MRZ. Например, из 'P<UZBNEMATJONOVNA<<MAKHINUR<' \`surname\` будет 'NEMATJONOVNA', а \`givenName\` — 'MAKHINUR'. Все символы '<' должны быть заменены на ОДИН пробел. **Не используйте 'MAKH I NUR' из VIZ!**
-    *   **Даты (\`dateOfBirth\`, \`expiryDate\`, \`dateOfIssue\`):** Найдите дату в любом формате и ВСЕГДА переформатируйте её в формат **DD.MM.YYYY**.
-    *   **\`placeOfBirth\`:** Если видите сокращения типа 'RUSSIAN FEDE', вы должны распознать это как 'Russian Federation'.
-    *   **\`authority\`:** Для паспортов Узбекистана (UZB) и других стран региона, если орган выдачи указан как 'MIA' и за ним следуют цифры (например, 'MIA 6206'), извлеките это значение как есть.
+Document Type = первый символ первой строки (обычно P).
 
-4.  **ФОРМАТ ВЫВОДА (ЕДИНСТВЕННО ВОЗМОЖНЫЙ):**
-    *   Отвечайте **ТОЛЬКО** одним валидным JSON-объектом.
-    *   Не включайте никакого пояснительного текста, markdown-разметки (например, \`\`\`json) или комментариев до или после JSON.
-    *   Если поле не найдено в предназначенной для него зоне (MRZ или VIZ), верните его как пустую строку \`""\`.
-    *   Поле \`documentNumber\` из MRZ **ОБЯЗАТЕЛЬНО**. Если его нет, это ошибка.
+Issuing Country = позиции 3–5 первой строки (ISO3, напр. UZB).
 
-Проанализируйте следующий текст, строго следуя всем правилам, и верните JSON-объект:
+Surname = из первой строки после P<XXX и до << (в UPPERCASE).
+
+Given Name = всё, что после <<, включая все имена и отчества (все < заменяй на пробел, лишние пробелы убирай, в UPPERCASE). Например, если MRZ содержит <<MAKHINUR<NEMATJONOVNA, то Given Name = MAKHINUR NEMATJONOVNA.
+
+Document Number = начало второй строки (поз. 1–9) до контрольной цифры. Убирай пробелы/<.
+
+Nationality = ISO3 из второй строки (после номера и его чека).
+
+Date of Birth = YYMMDD → DD.MM.YYYY (век определяй логично по дате истечения).
+
+Sex = M или F.
+
+Expiry Date = YYMMDD → DD.MM.YYYY.
+
+Personal Number = всё между датой окончания и финальным контрольным числом; только буквы/цифры.
+
+OCR-ошибки исправляй по контексту MRZ:
+
+O↔0, I↔1, B↔8, G↔6, S↔5, Z↔2, кириллические М/А/В → латиница M/A/B.
+Используй контрольные суммы MRZ для проверки.
+
+Три поля только из не-MRZ текста:
+
+Place of Birth: ищи рядом с PLACE OF BIRTH / TUG\'ILGAN JOYI. Исправляй усечённые значения (напр. RUSSIAN FEDE → RUSSIAN FEDERATION).
+
+Authority: для паспортов Узбекистана — строка, начинающаяся на MIA/МИА и далее цифры. Верни в латинице как MIA ####.
+
+Date of Issue: ищи рядом с DATE OF ISSUE / BERILGAN SANASI, форматируй DD.MM.YYYY.
+
+Нормализация:
+
+Все даты = DD.MM.YYYY.
+
+Все буквы в именах = UPPERCASE, пробелы нормализованы.
+
+Страны в Issuing Country и Nationality = ISO3 из MRZ.
+
+Если поле не найдено — оставь пустым.
+
+Вывод — одна CSV-строка строго в этом порядке колонок:
+Document Type,Issuing Country,Surname,Given Name,Document Number,Nationality,Date of Birth,Sex,Expiry Date,Personal Number,Date of Issue,Place of Birth,Authority,File Name
 
 --- НАЧАЛО ТЕКСТА ---
 ${fullText}
 --- КОНЕЦ ТЕКСТА ---
+
+--- ИМЯ ФАЙЛА ---
+${input.fileName}
+--- КОНЕЦ ИМЕНИ ФАЙЛА ---
 `;
 
   const gptResponse = await yandexGptService.analyzeText(prompt);
-  const mrzData = parseYandexGPTResponse(gptResponse);
+  const mrzData = parseCsvResponse(gptResponse);
 
   if (!mrzData.documentNumber) {
     throw new Error('Failed to extract a valid Document Number from the text.');

@@ -163,7 +163,7 @@ const MrzScannerCore = () => {
       const scan = newScans.find((s) => s.fileName === file.name)!;
       try {
         const photoDataUri = await fileToDataUri(file);
-        const result = await extractMrzDataAction({photoDataUri});
+        const result = await extractMrzDataAction({photoDataUri, fileName: file.name});
 
         if (result.success && result.data) {
           const { mrzData, rawOcrText } = result.data as ExtractMrzResponse;
